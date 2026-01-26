@@ -23,7 +23,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: '8.15.4'
+          version: 10 # Updated to meet the >=10 requirement
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -31,8 +31,7 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Install pnpm globally
-        run: npm install -g pnpm@8.15.4
+      # Removed "Install pnpm globally" step (redundant and was installing the wrong version)
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
