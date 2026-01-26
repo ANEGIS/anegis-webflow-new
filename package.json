@@ -2,7 +2,7 @@
   "name": "anegis-webflow-new", 
   "version": "0.0.0",
   "description": "Webflow development project for Anegis",
-  "private": true,
+  "private": false,
   "homepage": "https://github.com/YOUR_USERNAME/anegis-webflow-new#readme",
   "license": "UNLICENSED",
   "keywords": [],
@@ -59,6 +59,7 @@
     "pnpm": ">=10"
   },
   "publishConfig": {
+    "access": "public",
     "provenance": true
   }
 }
