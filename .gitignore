@@ -110,3 +110,4 @@ playwright/.cache/
 *.seed
 *.pid.lock
 .history/
+instructions.md
