@@ -1,5 +1,8 @@
 # Finsweet Developer Starter
 
+[![npm version](https://badge.fury.io/js/anegis-webflow-new.svg)](https://badge.fury.io/js/anegis-webflow-new)
+
+
 A starter template for both Client & Power projects.
 
 Before starting to work with this template, please take some time to read through the documentation.
@@ -41,7 +44,25 @@ This template requires the use of [pnpm](https://pnpm.js.org/en/). You can [inst
 npm i -g pnpm
 ```
 
+
 To enable automatic deployments to npm, please read the [Continuous Deployment](#continuous-deployment) section.
+
+## How to use in Webflow
+
+To use the code in your Webflow project, add the following script to your site's "Before </body> tag" in the custom code settings:
+
+### Using jsDelivr (Recommended)
+```html
+<script defer src="https://cdn.jsdelivr.net/npm/anegis-webflow-new@1.0.0/dist/index.js"></script>
+```
+
+### Using unpkg
+```html
+<script defer src="https://unpkg.com/anegis-webflow-new@1.0.0/dist/index.js"></script>
+```
+
+> **Note:** Replace `@1.0.0` with the specific version you want to target, or use `@latest` for the most recent version (use with caution in production).
+
 
 ## Getting started
 
