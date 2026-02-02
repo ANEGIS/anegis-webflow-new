@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 1.2.0
+
+### Minor Changes
+
+- 8332279: refactor
+
 ## 1.1.0
 
 ### Minor Changes
