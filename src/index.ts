@@ -1,5 +1,6 @@
 import { greetUser } from '$utils/greet';
 
+import { initBlobAnimation } from './animations/BlobAnimation';
 import { initMarquee } from './animations/Marquee';
 import { initScrollLine } from './animations/ScrollLine';
 import { initFaqCards } from './components/cards/FaqCards';
@@ -22,4 +23,5 @@ window.Webflow.push(() => {
   initScrollLine();
   initAccessibleDropdown();
   initMarquee();
+  initBlobAnimation();
 });
