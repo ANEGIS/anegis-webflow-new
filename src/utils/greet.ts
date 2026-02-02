@@ -1,18 +1,23 @@
 import { getPublishDate } from '@finsweet/ts-utils';
 
 /**
- * Greets the user by printing a message in the console.
- * @param name The user's name.
+ * Logs build information to the console.
  */
-export const greetUser = (name: string) => {
+export const greetUser = () => {
   const publishDate = getPublishDate();
 
-  console.log(`Hello ${name}!`);
+  console.log('index.js loaded');
   console.log(
-    `This site was last published on ${publishDate?.toLocaleDateString('en-US', {
+    `Last published: ${publishDate?.toLocaleString('en-US', {
       year: 'numeric',
       month: 'long',
       day: '2-digit',
-    })}.`
+      hour: '2-digit',
+      minute: '2-digit',
+    })}`
   );
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🚧 Running in development mode');
+  }
 };

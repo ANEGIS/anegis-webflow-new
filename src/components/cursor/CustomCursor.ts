@@ -1,4 +1,3 @@
-// Assuming GSAP not imported, need declaration
 interface GSAP {
   set(target: string | Element | NodeList | Element[], vars: Record<string, unknown>): void;
 
@@ -25,6 +24,9 @@ export function initCustomCursor() {
     console.warn('GSAP not found');
     return;
   }
+
+  // Reduce trail visibility to be subtle (5-10%)
+  gsap.set(trailPath, { opacity: 0.08 });
 
   // ===== CONFIGURATION =====
   const CONFIG = {

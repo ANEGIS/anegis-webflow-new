@@ -1,4 +1,3 @@
-// Assuming Swiper is loaded globally via Webflow
 interface SwiperInstance {
   slides: HTMLElement[];
   activeIndex: number;

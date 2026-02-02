@@ -25,6 +25,7 @@ const context = await esbuild.context({
   inject: LIVE_RELOAD ? ['./bin/live-reload.js'] : undefined,
   define: {
     SERVE_ORIGIN: JSON.stringify(SERVE_ORIGIN),
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
   },
 });
 

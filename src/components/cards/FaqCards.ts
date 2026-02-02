@@ -1,4 +1,3 @@
-// Assuming GSAP is loaded globally via Webflow
 interface GSAP {
   set(target: string | Element | NodeList | Element[], vars: Record<string, unknown>): void;
   to(target: string | Element | NodeList | Element[] | null, vars: Record<string, unknown>): void;
@@ -9,11 +8,24 @@ declare const gsap: GSAP;
 
 export function initFaqCards() {
   const cards = document.querySelectorAll('.layout_card.is-faq');
-  const images = document.querySelectorAll('.about_component-imge-outer');
+  const images = document.querySelectorAll('.about_component-image-outer');
 
-  // 1. Initial Setup: Hide all images instantly
+  // 1. Initial Setup: Hide all images instantly and prevent stretching
   gsap.set('.layout-card-bottom', { height: 0, overflow: 'hidden', display: 'block' });
-  gsap.set(images, { autoAlpha: 0, display: 'none' });
+  gsap.set(images, {
+    autoAlpha: 0,
+    display: 'none',
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  });
+
+  // Ensure inner images also cover
+  const innerImages = document.querySelectorAll('.about_component-image-outer img');
+  gsap.set(innerImages, { width: '100%', height: '100%', objectFit: 'cover' });
 
   // 2. Animation Function
   function animateCard(card: Element, isOpen: boolean) {
@@ -22,30 +34,31 @@ export function initFaqCards() {
 
     // Get ID and find the SPECIFIC matching image
     const id = card.getAttribute('data-card');
-    const img = document.querySelector(`.about_component-imge-outer[data-image="${id}"]`);
+    const img = document.querySelector(`.about_component-image-outer[data-image="${id}"]`);
 
     if (isOpen) {
       if (bottom) {
-        gsap.to(bottom, { height: 'auto', duration: 0.4, ease: 'power2.out' });
+        gsap.to(bottom, { height: 'auto', duration: 0.6, ease: 'power3.inOut' });
       }
       if (iconWrapper) iconWrapper.classList.add('is-active');
 
       if (img) {
         // Force display block first, then animate opacity
         gsap.set(img, { display: 'block', zIndex: 2 });
-        gsap.to(img, { autoAlpha: 1, duration: 0.4, overwrite: true });
+        gsap.to(img, { autoAlpha: 1, duration: 0.6, ease: 'power3.inOut', overwrite: true });
       } else {
         console.warn(`No image found for Card ID: ${id}`);
       }
     } else {
-      gsap.to(bottom, { height: 0, duration: 0.3, ease: 'power2.in' });
+      gsap.to(bottom, { height: 0, duration: 0.6, ease: 'power3.inOut' });
       if (iconWrapper) iconWrapper.classList.remove('is-active');
 
       if (img) {
         gsap.set(img, { zIndex: 1 });
         gsap.to(img, {
           autoAlpha: 0,
-          duration: 0.3,
+          duration: 0.6,
+          ease: 'power3.inOut',
           onComplete: () => gsap.set(img, { display: 'none' }),
         });
       }
@@ -55,7 +68,7 @@ export function initFaqCards() {
   // 3. Find the first card that actually has a matching image and open it
   const firstValidCard = Array.from(cards).find((card) => {
     const id = card.getAttribute('data-card');
-    return document.querySelector(`.about_component-imge-outer[data-image="${id}"]`);
+    return document.querySelector(`.about_component-image-outer[data-image="${id}"]`);
   });
 
   if (firstValidCard) {
