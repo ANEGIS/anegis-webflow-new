@@ -231,8 +231,12 @@ export const initBlobAnimation = () => {
   let animationId: number;
   const startTime = performance.now();
   let lastGrainFrame = 0;
-  const grainFps = 30; // Grain updates at 30fps
-  const grainAmount = 0.08; // Subtle grain (0.0-1.0)
+  const grainFps = 12; // Lower FPS for grain (still looks good)
+  const grainAmount = 0.08;
+  const grainScale = 4; // Render grain at 1/4 resolution for performance
+
+  // Pre-allocate grain buffer at smaller size
+  let grainImageData: ImageData | null = null;
 
   function render() {
     resize();
@@ -256,25 +260,36 @@ export const initBlobAnimation = () => {
     // Draw blob
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    // Render grain overlay at 30fps
+    // Render grain overlay at lower resolution & FPS for performance
     const now = performance.now();
     if (grainCtx && now - lastGrainFrame > 1000 / grainFps) {
       lastGrainFrame = now;
-      const imageData = grainCtx.createImageData(grainCanvas.width, grainCanvas.height);
-      const { data } = imageData;
+      const gw = Math.ceil(grainCanvas.width / grainScale);
+      const gh = Math.ceil(grainCanvas.height / grainScale);
+
+      // Recreate buffer if size changed
+      if (!grainImageData || grainImageData.width !== gw || grainImageData.height !== gh) {
+        grainImageData = grainCtx.createImageData(gw, gh);
+      }
+
+      const { data } = grainImageData;
       for (let i = 0; i < data.length; i += 4) {
         const noise = (Math.random() - 0.5) * 255 * grainAmount;
-        data[i] = 128 + noise; // R
-        data[i + 1] = 128 + noise; // G
-        data[i + 2] = 128 + noise; // B
-        data[i + 3] = 255; // A
+        data[i] = 128 + noise;
+        data[i + 1] = 128 + noise;
+        data[i + 2] = 128 + noise;
+        data[i + 3] = 255;
       }
-      grainCtx.putImageData(imageData, 0, 0);
+
+      // Clear and draw scaled
+      grainCtx.clearRect(0, 0, grainCanvas.width, grainCanvas.height);
+      grainCtx.imageSmoothingEnabled = false; // Crispy pixels
+      grainCtx.putImageData(grainImageData, 0, 0);
+      grainCtx.drawImage(grainCanvas, 0, 0, gw, gh, 0, 0, grainCanvas.width, grainCanvas.height);
     }
 
     animationId = requestAnimationFrame(render);
   }
-
   render();
 
   // Cleanup on hot reload
