@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 1.4.0
+
+### Minor Changes
+
+- 1a2b72e: mobile fixes
+
 ## 1.3.2
 
 ### Patch Changes
