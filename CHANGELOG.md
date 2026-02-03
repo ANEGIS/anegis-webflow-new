@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 1.3.2
+
+### Patch Changes
+
+- f715a88: blob structure
+
 ## 1.3.1
 
 ### Patch Changes
