@@ -122,7 +122,7 @@ export const initBlobAnimation = () => {
     
     void main() {
       vec2 uv = v_uv;
-      float time = u_time * 1.01; // Animation speed
+      float time = u_time * 0.25; // Animation speed
       
       // --- CENTER the blob in the canvas ---
       vec2 center = vec2(0.5, 0.5);
