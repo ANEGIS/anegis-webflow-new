@@ -84,6 +84,12 @@ export function initAccessibleDropdown() {
     dropdowns.forEach((dropdown) => {
       const dropdownList = dropdown.querySelector('.w-dropdown-list');
       if (dropdownList && dropdownList.classList.contains('w--open')) {
+        // Skip if dropdown is inside an open mobile nav menu
+        const mobileNavOverlay = dropdown.closest('.w-nav-overlay');
+        if (mobileNavOverlay && mobileNavOverlay.classList.contains('w--open')) {
+          return;
+        }
+
         if (!dropdown.contains(event.target as Node)) {
           closeWebflowDropdown(dropdown);
         }

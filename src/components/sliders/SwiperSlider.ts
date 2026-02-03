@@ -34,7 +34,7 @@ export function initSwiperSlider() {
   const progressTrack = document.querySelector('.swiper-progress-track');
   const progressThumb = document.querySelector('.swiper-progress-thumb') as HTMLElement;
 
-  const swiperInstance = new Swiper('.swiper.w-dyn-list', {
+  const swiperInstance = new Swiper('.swiper.w-dyn-list:not([data-slider-mobile])', {
     // Layout
     slidesPerView: 1,
     spaceBetween: 36,
