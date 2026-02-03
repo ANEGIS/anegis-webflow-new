@@ -135,14 +135,13 @@ export const initBlobAnimation = () => {
       float dist = max(distX, distY); // Use maximum - reaches 1.0 at any edge
       
       // --- ANIMATED NOISE for organic color morphing ---
-      vec2 noiseCoord = uv * 6.0;
-      float n1 = fbm(noiseCoord + vec2(time * 0.6, time * 0.4));
-      float n2 = fbm(noiseCoord * 0.8 - vec2(time * 0.5, time * -0.3));
-      float noise = (n1 + n2) * 0.5;
+      // Very low frequency = just 1-2 large color areas, smooth and rounded
+      vec2 noiseCoord = uv * 0.8;
+      float noise = fbm(noiseCoord + vec2(time * 0.3, time * 0.2));
       
-      // --- COLOR MIXING: two colors morphing together ---
-      float colorMix = noise * 0.75 + 0.5;
-      colorMix = smoothstep(0.3, 0.7, colorMix);
+      // --- COLOR MIXING: simple smooth blend between two colors ---
+      float colorMix = noise + 0.5;
+      colorMix = smoothstep(0.4, 0.6, colorMix); // Soft edge between colors
       vec3 gradientColor = mix(u_color1, u_color2, colorMix);
       
       // --- RADIAL FADE: MUST reach background before canvas edges ---
