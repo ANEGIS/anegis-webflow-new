@@ -1,5 +1,12 @@
 # anegis-webflow-new
 
+## 1.3.0
+
+### Minor Changes
+
+- 99f6802: blob optimize
+- 358f8c0: blob push
+
 ## 1.2.0
 
 ### Minor Changes
