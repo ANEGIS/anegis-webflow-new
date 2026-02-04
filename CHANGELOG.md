@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 2.0.1
+
+### Patch Changes
+
+- fc4b4a8: minor fixes
+
 ## 2.0.0
 
 ### Major Changes
