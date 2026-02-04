@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 2.0.0
+
+### Major Changes
+
+- d1a23a9: navbar mobile
+
 ## 1.4.0
 
 ### Minor Changes
