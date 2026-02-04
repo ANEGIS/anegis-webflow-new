@@ -8,6 +8,7 @@ import { initFaqCards } from './components/cards/FaqCards';
 import { initCustomCursor } from './components/cursor/CustomCursor';
 import { initAccessibleDropdown } from './components/dropdown/AccessibleDropdown';
 import { initSmartNav } from './components/layout/SmartNav';
+import { initMegaMenuAccordion } from './components/menu/MegaMenuAccordion';
 import { initMobileSliders } from './components/sliders/MobileSlider';
 import { initSwiperSlider } from './components/sliders/SwiperSlider';
 import { initMobileTabs } from './components/tabs/MobileTabs';
@@ -22,6 +23,7 @@ window.Webflow.push(() => {
   initTabLists();
   initMobileTabs();
   initSmartNav();
+  initMegaMenuAccordion();
   initFaqCards();
   initSwiperSlider();
   initMobileSliders();
