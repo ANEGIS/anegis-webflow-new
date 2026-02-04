@@ -27,10 +27,17 @@ declare class Lenis {
 // Desktop breakpoint
 const DESKTOP_BREAKPOINT = 991;
 
+// Flag to enable/disable Lenis smooth scroll
+const LENIS_ENABLED = true;
+
 /**
  * Initialize Lenis smooth scrolling
  */
 export function initSmoothScroll(): void {
+  if (!LENIS_ENABLED) {
+    return;
+  }
+
   if (typeof Lenis === 'undefined') {
     console.error('[SmoothScroll] Lenis is not loaded');
     return;

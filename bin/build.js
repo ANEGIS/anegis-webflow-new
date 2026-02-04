@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild';
-import { readdirSync } from 'fs';
+import { readdirSync, existsSync } from 'fs';
 import { join, sep } from 'path';
 
 // Config output
@@ -12,7 +12,11 @@ const ENTRY_POINTS = ['src/index.ts'];
 // Config dev serving
 const LIVE_RELOAD = !PRODUCTION;
 const SERVE_PORT = 3000;
-const SERVE_ORIGIN = `http://localhost:${SERVE_PORT}`;
+const USE_HTTPS = true; // Set to false to use HTTP
+const CERT_DIR = './bin/certs';
+const SERVE_ORIGIN = USE_HTTPS
+  ? `https://localhost:${SERVE_PORT}`
+  : `http://localhost:${SERVE_PORT}`;
 
 // Create context
 const context = await esbuild.context({
@@ -38,12 +42,31 @@ if (PRODUCTION) {
 // Watch and serve files in dev
 else {
   await context.watch();
-  await context
-    .serve({
-      servedir: BUILD_DIRECTORY,
-      port: SERVE_PORT,
-    })
-    .then(logServedFiles);
+
+  // Prepare serve options
+  const serveOptions = {
+    servedir: BUILD_DIRECTORY,
+    port: SERVE_PORT,
+  };
+
+  // Add HTTPS if enabled and certs exist
+  if (USE_HTTPS) {
+    const keyPath = `${CERT_DIR}/localhost-key.pem`;
+    const certPath = `${CERT_DIR}/localhost.pem`;
+
+    if (existsSync(keyPath) && existsSync(certPath)) {
+      serveOptions.keyfile = keyPath;
+      serveOptions.certfile = certPath;
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[HTTPS] Certificates not found at ${CERT_DIR}/. Falling back to HTTP.\n` +
+          `Run: mkdir -p ${CERT_DIR} && mkcert -key-file ${CERT_DIR}/localhost-key.pem -cert-file ${CERT_DIR}/localhost.pem localhost`
+      );
+    }
+  }
+
+  await context.serve(serveOptions).then(logServedFiles);
 }
 
 /**
