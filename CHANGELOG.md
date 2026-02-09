@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 2.1.3
+
+### Patch Changes
+
+- 323ece6: swiper fix
+
 ## 2.1.2
 
 ### Patch Changes
