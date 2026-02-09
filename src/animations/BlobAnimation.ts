@@ -19,41 +19,43 @@ const DEFAULT_COLOR_2: [number, number, number] = [0.106, 0.275, 0.435]; // #1B4
 const DEFAULT_COLOR_BG: [number, number, number] = [0.047, 0.047, 0.047]; // #0c0c0c
 
 export const initBlobAnimation = () => {
-  const container = document.querySelector('[data-blob-main]') as HTMLElement;
-  if (!container) return;
+  const containers = document.querySelectorAll('[data-blob-main]');
+  if (containers.length === 0) return;
 
-  container.innerHTML = '';
+  containers.forEach((container) => {
+    const htmlContainer = container as HTMLElement;
+    htmlContainer.innerHTML = '';
 
-  // Read custom colors from data attributes
-  const color1Attr = container.getAttribute('data-color-1');
-  const color2Attr = container.getAttribute('data-color-2');
-  const color3Attr = container.getAttribute('data-color-3');
-  const blurAttr = container.getAttribute('data-blur') || '1.2rem';
+    // Read custom colors from data attributes
+    const color1Attr = htmlContainer.getAttribute('data-color-1');
+    const color2Attr = htmlContainer.getAttribute('data-color-2');
+    const color3Attr = htmlContainer.getAttribute('data-color-3');
+    const blurAttr = htmlContainer.getAttribute('data-blur') || '1.2rem';
 
-  const color1 = (color1Attr && parseHexColor(color1Attr)) || DEFAULT_COLOR_1;
-  const color2 = (color2Attr && parseHexColor(color2Attr)) || DEFAULT_COLOR_2;
-  const colorBg = (color3Attr && parseHexColor(color3Attr)) || DEFAULT_COLOR_BG;
+    const color1 = (color1Attr && parseHexColor(color1Attr)) || DEFAULT_COLOR_1;
+    const color2 = (color2Attr && parseHexColor(color2Attr)) || DEFAULT_COLOR_2;
+    const colorBg = (color3Attr && parseHexColor(color3Attr)) || DEFAULT_COLOR_BG;
 
-  // Create main blob canvas (will be blurred)
-  const canvas = document.createElement('canvas');
-  canvas.style.cssText = `position:absolute;inset:0;width:100%;height:100%;filter:blur(${blurAttr});`;
-  container.appendChild(canvas);
+    // Create main blob canvas (will be blurred)
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = `position:absolute;inset:0;width:100%;height:100%;filter:blur(${blurAttr});`;
+    htmlContainer.appendChild(canvas);
 
-  // Create grain overlay canvas (NOT blurred)
-  const grainCanvas = document.createElement('canvas');
-  grainCanvas.style.cssText =
-    'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:overlay;';
-  container.appendChild(grainCanvas);
-  const grainCtx = grainCanvas.getContext('2d');
+    // Create grain overlay canvas (NOT blurred)
+    const grainCanvas = document.createElement('canvas');
+    grainCanvas.style.cssText =
+      'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:overlay;';
+    htmlContainer.appendChild(grainCanvas);
+    const grainCtx = grainCanvas.getContext('2d');
 
-  const gl = canvas.getContext('webgl');
-  if (!gl) {
-    console.error('WebGL not supported');
-    return;
-  }
+    const gl = canvas.getContext('webgl');
+    if (!gl) {
+      console.error('WebGL not supported');
+      return;
+    }
 
-  // Vertex shader - simple fullscreen quad
-  const vertexShaderSource = `
+    // Vertex shader - simple fullscreen quad
+    const vertexShaderSource = `
     attribute vec2 a_position;
     varying vec2 v_uv;
     void main() {
@@ -62,8 +64,8 @@ export const initBlobAnimation = () => {
     }
   `;
 
-  // Fragment shader - the magic happens here
-  const fragmentShaderSource = `
+    // Fragment shader - the magic happens here
+    const fragmentShaderSource = `
     precision highp float;
     
     varying vec2 v_uv;
@@ -160,147 +162,156 @@ export const initBlobAnimation = () => {
     }
   `;
 
-  // Compile shaders
-  function createShader(
-    gl: WebGLRenderingContext,
-    type: number,
-    source: string
-  ): WebGLShader | null {
-    const shader = gl.createShader(type);
-    if (!shader) return null;
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-      gl.deleteShader(shader);
-      return null;
+    // Compile shaders
+    function createShader(
+      gl: WebGLRenderingContext,
+      type: number,
+      source: string
+    ): WebGLShader | null {
+      const shader = gl.createShader(type);
+      if (!shader) return null;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+      }
+      return shader;
     }
-    return shader;
-  }
 
-  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-  if (!vertexShader || !fragmentShader) return;
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    if (!vertexShader || !fragmentShader) return;
 
-  // Create program
-  const program = gl.createProgram();
-  if (!program) return;
-  gl.attachShader(program, vertexShader);
-  gl.attachShader(program, fragmentShader);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.error('Program link error:', gl.getProgramInfoLog(program));
-    return;
-  }
-
-  // Set up geometry (fullscreen quad)
-  const positionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
-    gl.STATIC_DRAW
-  );
-
-  // Get locations
-  const positionLocation = gl.getAttribLocation(program, 'a_position');
-  const timeLocation = gl.getUniformLocation(program, 'u_time');
-  const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-  const color1Location = gl.getUniformLocation(program, 'u_color1');
-  const color2Location = gl.getUniformLocation(program, 'u_color2');
-  const colorBgLocation = gl.getUniformLocation(program, 'u_colorBg');
-
-  // Resize handler
-  function resize() {
-    const dpr = window.devicePixelRatio || 1;
-    const displayWidth = Math.floor(canvas.clientWidth * dpr);
-    const displayHeight = Math.floor(canvas.clientHeight * dpr);
-    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-      canvas.width = displayWidth;
-      canvas.height = displayHeight;
+    // Create program
+    const program = gl.createProgram();
+    if (!program) return;
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program));
+      return;
     }
-    // Resize grain canvas too
-    if (grainCanvas.width !== displayWidth || grainCanvas.height !== displayHeight) {
-      grainCanvas.width = displayWidth;
-      grainCanvas.height = displayHeight;
-    }
-  }
 
-  // Animation loop
-  let animationId: number;
-  const startTime = performance.now();
-  let lastGrainFrame = 0;
-  const grainFps = 12; // Lower FPS for grain (still looks good)
-  const grainAmount = 0.08;
-  const grainScale = 4; // Render grain at 1/4 resolution for performance
-
-  // Pre-allocate grain buffer at smaller size
-  let grainImageData: ImageData | null = null;
-
-  function render() {
-    resize();
-    gl.viewport(0, 0, canvas.width, canvas.height);
-
-    gl.useProgram(program);
-
-    // Set uniforms
-    const currentTime = (performance.now() - startTime) / 1000;
-    gl.uniform1f(timeLocation, currentTime);
-    gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-    gl.uniform3f(color1Location, color1[0], color1[1], color1[2]);
-    gl.uniform3f(color2Location, color2[0], color2[1], color2[2]);
-    gl.uniform3f(colorBgLocation, colorBg[0], colorBg[1], colorBg[2]);
-
-    // Set up position attribute
-    gl.enableVertexAttribArray(positionLocation);
+    // Set up geometry (fullscreen quad)
+    const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+      gl.STATIC_DRAW
+    );
 
-    // Draw blob
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    // Get locations
+    const positionLocation = gl.getAttribLocation(program, 'a_position');
+    const timeLocation = gl.getUniformLocation(program, 'u_time');
+    const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+    const color1Location = gl.getUniformLocation(program, 'u_color1');
+    const color2Location = gl.getUniformLocation(program, 'u_color2');
+    const colorBgLocation = gl.getUniformLocation(program, 'u_colorBg');
 
-    // Render grain overlay at lower resolution & FPS for performance
-    const now = performance.now();
-    if (grainCtx && now - lastGrainFrame > 1000 / grainFps) {
-      lastGrainFrame = now;
-      const gw = Math.ceil(grainCanvas.width / grainScale);
-      const gh = Math.ceil(grainCanvas.height / grainScale);
-
-      // Recreate buffer if size changed
-      if (!grainImageData || grainImageData.width !== gw || grainImageData.height !== gh) {
-        grainImageData = grainCtx.createImageData(gw, gh);
+    // Resize handler
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      const displayWidth = Math.floor(canvas.clientWidth * dpr);
+      const displayHeight = Math.floor(canvas.clientHeight * dpr);
+      if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
       }
-
-      const { data } = grainImageData;
-      for (let i = 0; i < data.length; i += 4) {
-        const noise = (Math.random() - 0.5) * 255 * grainAmount;
-        data[i] = 128 + noise;
-        data[i + 1] = 128 + noise;
-        data[i + 2] = 128 + noise;
-        data[i + 3] = 255;
+      // Resize grain canvas too
+      if (grainCanvas.width !== displayWidth || grainCanvas.height !== displayHeight) {
+        grainCanvas.width = displayWidth;
+        grainCanvas.height = displayHeight;
       }
-
-      // Clear and draw scaled
-      grainCtx.clearRect(0, 0, grainCanvas.width, grainCanvas.height);
-      grainCtx.imageSmoothingEnabled = false; // Crispy pixels
-      grainCtx.putImageData(grainImageData, 0, 0);
-      grainCtx.drawImage(grainCanvas, 0, 0, gw, gh, 0, 0, grainCanvas.width, grainCanvas.height);
     }
 
-    animationId = requestAnimationFrame(render);
-  }
-  render();
+    // Animation loop
+    let animationId: number;
+    const startTime = performance.now();
+    let lastGrainFrame = 0;
+    const grainFps = 12; // Lower FPS for grain (still looks good)
+    const grainAmount = 0.08;
+    const grainScale = 4; // Render grain at 1/4 resolution for performance
 
-  // Cleanup on hot reload
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      for (const node of mutation.removedNodes) {
-        if (node === canvas || (node instanceof Element && node.contains(canvas))) {
-          cancelAnimationFrame(animationId);
-          observer.disconnect();
+    // Pre-allocate grain buffer at smaller size
+    let grainImageData: ImageData | null = null;
+
+    function render() {
+      resize();
+      gl.viewport(0, 0, canvas.width, canvas.height);
+
+      gl.useProgram(program);
+
+      // Set uniforms
+      const currentTime = (performance.now() - startTime) / 1000;
+      gl.uniform1f(timeLocation, currentTime);
+      gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+      gl.uniform3f(color1Location, color1[0], color1[1], color1[2]);
+      gl.uniform3f(color2Location, color2[0], color2[1], color2[2]);
+      gl.uniform3f(colorBgLocation, colorBg[0], colorBg[1], colorBg[2]);
+
+      // Set up position attribute
+      gl.enableVertexAttribArray(positionLocation);
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+      // Draw blob
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+      // Render grain overlay at lower resolution & FPS for performance
+      const now = performance.now();
+      if (grainCtx && now - lastGrainFrame > 1000 / grainFps) {
+        lastGrainFrame = now;
+        const gw = Math.ceil(grainCanvas.width / grainScale);
+        const gh = Math.ceil(grainCanvas.height / grainScale);
+
+        // Recreate buffer if size changed
+        if (!grainImageData || grainImageData.width !== gw || grainImageData.height !== gh) {
+          grainImageData = grainCtx.createImageData(gw, gh);
+        }
+
+        const { data } = grainImageData;
+        for (let i = 0; i < data.length; i += 4) {
+          const noise = (Math.random() - 0.5) * 255 * grainAmount;
+          data[i] = 128 + noise;
+          data[i + 1] = 128 + noise;
+          data[i + 2] = 128 + noise;
+          data[i + 3] = 255;
+        }
+
+        // Clear and draw scaled
+        grainCtx.clearRect(0, 0, grainCanvas.width, grainCanvas.height);
+        grainCtx.imageSmoothingEnabled = false; // Crispy pixels
+        grainCtx.putImageData(grainImageData, 0, 0);
+        grainCtx.drawImage(grainCanvas, 0, 0, gw, gh, 0, 0, grainCanvas.width, grainCanvas.height);
+      }
+
+      animationId = requestAnimationFrame(render);
+    }
+    render();
+
+    // Cleanup on hot reload
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.removedNodes) {
+          if (node === canvas || (node instanceof Element && node.contains(canvas))) {
+            cancelAnimationFrame(animationId);
+            observer.disconnect();
+          }
         }
       }
-    }
+    });
+    observer.observe(htmlContainer.parentElement || document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Reveal the blob once everything is ready
+    requestAnimationFrame(() => {
+      htmlContainer.style.opacity = '1';
+    });
   });
-  observer.observe(container.parentElement || document.body, { childList: true, subtree: true });
 };

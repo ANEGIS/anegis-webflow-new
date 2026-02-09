@@ -51,8 +51,12 @@ function isMobile(): boolean {
 function initSlider(element: HTMLElement): void {
   if (activeSliders.has(element)) return; // Already initialized
 
+  // Read data-mobile-slides attribute, fallback to 1 if not present
+  const mobileSlides = element.getAttribute('data-mobile-slides');
+  const slidesPerView = mobileSlides ? parseFloat(mobileSlides) : 1;
+
   const options: SwiperOptions = {
-    slidesPerView: 'auto',
+    slidesPerView: slidesPerView,
     spaceBetween: 0,
     loop: false,
     freeMode: false,
