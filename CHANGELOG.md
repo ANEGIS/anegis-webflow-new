@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 2.2.0
+
+### Minor Changes
+
+- fe482ad: dock fix
+
 ## 2.1.6
 
 ### Patch Changes
