@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 2.1.5
+
+### Patch Changes
+
+- d1186b2: line fix
+
 ## 2.1.4
 
 ### Patch Changes
