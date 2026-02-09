@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 2.1.4
+
+### Patch Changes
+
+- 7edb022: swiper desktop fix
+
 ## 2.1.3
 
 ### Patch Changes
