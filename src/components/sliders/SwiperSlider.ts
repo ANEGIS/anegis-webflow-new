@@ -37,26 +37,24 @@ const TABLET_BREAKPOINT = 991;
  * Initialize ALL swipers on the page
  *
  * Sliders with [data-slider-mobile]:
- *   - No transform/scale effects
- *   - slidesPerView = data-mobile-slides value on tablet and below, 1 on desktop
+ *   - Handled EXCLUSIVELY by MobileSlider.ts (mobile/tablet only)
+ *   - SKIPPED by this function
  *
  * Sliders without [data-slider-mobile] (standard):
  *   - Has scale transform effects
  *   - Has progress bar functionality
+ *   - Initialized on ALL screen sizes
  */
 export function initSwiperSlider() {
   if (typeof Swiper === 'undefined') return;
 
-  // Select ALL swiper elements
-  const swiperElements = document.querySelectorAll('.swiper');
+  // Select ALL swiper elements, but EXCLUDE mobile-only sliders
+  const swiperElements = document.querySelectorAll('.swiper:not([data-slider-mobile])');
 
   swiperElements.forEach((swiperElement) => {
     const element = swiperElement as HTMLElement;
 
-    // Check if this is a mobile-behavior slider
-    const isMobileSlider = element.hasAttribute('data-slider-mobile');
-
-    // Read data-mobile-slides for mobile slidesPerView
+    // Read data-mobile-slides for mobile slidesPerView (if set)
     const mobileSlides = element.getAttribute('data-mobile-slides');
     const mobileSlidesPerView = mobileSlides ? parseFloat(mobileSlides) : 1;
 
@@ -81,12 +79,12 @@ export function initSwiperSlider() {
       progressThumb = parent.querySelector('.swiper-progress-thumb') as HTMLElement | null;
     }
 
-    // Build options based on slider type
+    // Build options for standard sliders (mobile sliders are handled by MobileSlider.ts)
     const options: SwiperOptions = {
       slidesPerView: mobileSlidesPerView, // Mobile value as default
-      spaceBetween: isMobileSlider ? 16 : 36,
+      spaceBetween: 36,
       loop: false,
-      centeredSlides: !isMobileSlider, // Only center for non-mobile sliders
+      centeredSlides: true, // Always center for standard sliders
       navigation: {
         nextEl: nextEl,
         prevEl: prevEl,
@@ -98,35 +96,34 @@ export function initSwiperSlider() {
           centeredSlides: true,
         },
       },
-      on: isMobileSlider
-        ? {}
-        : {
-            init: function (this: SwiperInstance) {
-              setTimeout(() => {
-                updateScale(this);
-                if (progressThumb) updateProgress(this, progressThumb);
-              }, 50);
-            },
-            slideChange: function (this: SwiperInstance) {
-              updateScale(this);
-              if (progressThumb) updateProgress(this, progressThumb);
-            },
-            slideChangeTransitionStart: function (this: SwiperInstance) {
-              updateScale(this);
-            },
-            slideChangeTransitionEnd: function (this: SwiperInstance) {
-              updateScale(this);
-            },
-            transitionEnd: function (this: SwiperInstance) {
-              updateScale(this);
-            },
-          },
+      // Always add transform effects for standard sliders
+      on: {
+        init: function (this: SwiperInstance) {
+          setTimeout(() => {
+            updateScale(this);
+            if (progressThumb) updateProgress(this, progressThumb);
+          }, 50);
+        },
+        slideChange: function (this: SwiperInstance) {
+          updateScale(this);
+          if (progressThumb) updateProgress(this, progressThumb);
+        },
+        slideChangeTransitionStart: function (this: SwiperInstance) {
+          updateScale(this);
+        },
+        slideChangeTransitionEnd: function (this: SwiperInstance) {
+          updateScale(this);
+        },
+        transitionEnd: function (this: SwiperInstance) {
+          updateScale(this);
+        },
+      },
     };
 
     const swiperInstance = new Swiper(element, options);
 
-    // Click to scrub on progress bar (only for non-mobile sliders)
-    if (!isMobileSlider && progressTrack) {
+    // Click to scrub on progress bar
+    if (progressTrack) {
       progressTrack.addEventListener('click', function (e) {
         const event = e as MouseEvent;
         const rect = progressTrack.getBoundingClientRect();

@@ -36,8 +36,9 @@ declare class Swiper {
   destroy: (deleteInstance?: boolean, cleanStyles?: boolean) => void;
 }
 
-// Store active slider instances
+// Store active slider instances and their original slide styles
 const activeSliders = new Map<HTMLElement, SwiperInstance>();
+const originalStyles = new Map<HTMLElement, Map<HTMLElement, CSSStyleDeclaration>>();
 
 // Tablet and below breakpoint
 const MOBILE_BREAKPOINT = 991;
@@ -76,10 +77,18 @@ function initSlider(element: HTMLElement): void {
     prevEl = parent.querySelector('.swiper-arrow.is-prev') as HTMLElement | null;
   }
 
-  // Reset slide styles so Swiper can control them properly
-  // This fixes issues where Webflow CSS overrides Swiper's calculated widths
+  // Store original styles before modifying
   const slides = element.querySelectorAll<HTMLElement>('.swiper-slide');
+  const styleMap = new Map<HTMLElement, CSSStyleDeclaration>();
+
   slides.forEach((slide) => {
+    // Clone the current inline style
+    const originalStyle = slide.style.cssText;
+    const tempDiv = document.createElement('div');
+    tempDiv.style.cssText = originalStyle;
+    styleMap.set(slide, tempDiv.style);
+
+    // Reset slide styles so Swiper can control them properly
     slide.style.width = ''; // Clear any fixed width - Swiper will set this
     slide.style.minWidth = '0'; // Allow shrinking if needed
     slide.style.maxWidth = 'none'; // Remove max-width constraints
@@ -88,6 +97,8 @@ function initSlider(element: HTMLElement): void {
     slide.style.boxSizing = 'border-box'; // Ensure padding doesn't affect width
     slide.style.display = 'block'; // Ensure block display
   });
+
+  originalStyles.set(element, styleMap);
 
   // NOTE: slidesPerView calculation
   // slidesPerView: 1.9 means "fit 1.9 slides in viewport"
@@ -119,6 +130,15 @@ function destroySlider(element: HTMLElement): void {
   if (instance) {
     instance.destroy(true, true);
     activeSliders.delete(element);
+
+    // Restore original slide styles
+    const styleMap = originalStyles.get(element);
+    if (styleMap) {
+      styleMap.forEach((originalStyle, slide) => {
+        slide.style.cssText = originalStyle.cssText;
+      });
+      originalStyles.delete(element);
+    }
   }
 }
 
