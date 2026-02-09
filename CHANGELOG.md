@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 2.1.6
+
+### Patch Changes
+
+- c289920: nav fix
+
 ## 2.1.5
 
 ### Patch Changes
