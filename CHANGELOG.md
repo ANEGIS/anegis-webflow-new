@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 2.1.2
+
+### Patch Changes
+
+- af0f0cf: navbar fix
+
 ## 2.1.1
 
 ### Patch Changes
