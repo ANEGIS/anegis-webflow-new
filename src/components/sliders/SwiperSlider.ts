@@ -40,7 +40,11 @@ const TABLET_BREAKPOINT = 991;
  *   - Handled EXCLUSIVELY by MobileSlider.ts (mobile/tablet only)
  *   - SKIPPED by this function
  *
- * Sliders without [data-slider-mobile] (standard):
+ * Sliders with [data-slider-dock]:
+ *   - Handled EXCLUSIVELY by DockSlider.ts (mobile landscape/portrait only)
+ *   - SKIPPED by this function
+ *
+ * Sliders without [data-slider-mobile] or [data-slider-dock] (standard):
  *   - Has scale transform effects
  *   - Has progress bar functionality
  *   - Initialized on ALL screen sizes
@@ -48,8 +52,10 @@ const TABLET_BREAKPOINT = 991;
 export function initSwiperSlider() {
   if (typeof Swiper === 'undefined') return;
 
-  // Select ALL swiper elements, but EXCLUDE mobile-only sliders
-  const swiperElements = document.querySelectorAll('.swiper:not([data-slider-mobile])');
+  // Select ALL swiper elements, but EXCLUDE mobile-only and dock sliders
+  const swiperElements = document.querySelectorAll(
+    '.swiper:not([data-slider-mobile]):not([data-slider-dock])'
+  );
 
   swiperElements.forEach((swiperElement) => {
     const element = swiperElement as HTMLElement;
