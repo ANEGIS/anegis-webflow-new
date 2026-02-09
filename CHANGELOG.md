@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 2.1.0
+
+### Minor Changes
+
+- f77d931: swipers
+
 ## 2.0.1
 
 ### Patch Changes
