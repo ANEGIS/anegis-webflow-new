@@ -8,7 +8,7 @@
 const DESKTOP_BREAKPOINT = 991;
 
 // --- CONFIGURATION ---
-const TARGET_SELECTOR = "[fs-scrolldisable-element='smart-nav']";
+const TARGET_SELECTOR = '.w-nav';
 const BUTTON_WRAPPER_SELECTOR = '.button-wrapper';
 
 const ACTIVE_CLASS = 'is-pinned';
