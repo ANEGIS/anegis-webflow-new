@@ -25,6 +25,10 @@ interface SwiperOptions {
   centeredSlides?: boolean;
   freeMode?: boolean;
   watchOverflow?: boolean;
+  navigation?: {
+    nextEl: HTMLElement | null;
+    prevEl: HTMLElement | null;
+  };
 }
 
 declare class Swiper {
@@ -55,12 +59,34 @@ function initSlider(element: HTMLElement): void {
   const mobileSlides = element.getAttribute('data-mobile-slides');
   const slidesPerView = mobileSlides ? parseFloat(mobileSlides) : 1;
 
+  // Try to find arrows inside the swiper, or in the parent container
+  const parent = element.parentElement;
+  let nextEl = element.querySelector('.swiper-arrow.is-next') as HTMLElement | null;
+  let prevEl = element.querySelector('.swiper-arrow.is-prev') as HTMLElement | null;
+
+  // If not found inside, check parent container
+  if (!nextEl && parent) {
+    nextEl = parent.querySelector('.swiper-arrow.is-next') as HTMLElement | null;
+  }
+  if (!prevEl && parent) {
+    prevEl = parent.querySelector('.swiper-arrow.is-prev') as HTMLElement | null;
+  }
+
+  console.log('[MobileSlider] Initializing:', element);
+  console.log('[MobileSlider] slidesPerView:', slidesPerView);
+  console.log('[MobileSlider] nextEl:', nextEl);
+  console.log('[MobileSlider] prevEl:', prevEl);
+
   const options: SwiperOptions = {
     slidesPerView: slidesPerView,
     spaceBetween: 0,
     loop: false,
     freeMode: false,
     watchOverflow: true,
+    navigation: {
+      nextEl: nextEl,
+      prevEl: prevEl,
+    },
   };
 
   const instance = new Swiper(element, options);
@@ -116,12 +142,19 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number):
  * Initialize mobile sliders
  */
 export function initMobileSliders(): void {
+  console.log('[MobileSlider] initMobileSliders called');
+  console.log('[MobileSlider] Swiper available:', typeof Swiper !== 'undefined');
+  console.log('[MobileSlider] isMobile():', isMobile());
+  console.log('[MobileSlider] window.innerWidth:', window.innerWidth);
+
   if (typeof Swiper === 'undefined') {
     console.error('[MobileSlider] Swiper is not loaded');
     return;
   }
 
   const sliders = getSliderElements();
+  console.log('[MobileSlider] Found sliders:', sliders.length, sliders);
+
   if (sliders.length === 0) return;
 
   // Initial check
