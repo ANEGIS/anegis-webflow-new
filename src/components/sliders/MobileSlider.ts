@@ -72,11 +72,6 @@ function initSlider(element: HTMLElement): void {
     prevEl = parent.querySelector('.swiper-arrow.is-prev') as HTMLElement | null;
   }
 
-  console.log('[MobileSlider] Initializing:', element);
-  console.log('[MobileSlider] slidesPerView:', slidesPerView);
-  console.log('[MobileSlider] nextEl:', nextEl);
-  console.log('[MobileSlider] prevEl:', prevEl);
-
   const options: SwiperOptions = {
     slidesPerView: slidesPerView,
     spaceBetween: 0,
@@ -142,18 +137,9 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number):
  * Initialize mobile sliders
  */
 export function initMobileSliders(): void {
-  console.log('[MobileSlider] initMobileSliders called');
-  console.log('[MobileSlider] Swiper available:', typeof Swiper !== 'undefined');
-  console.log('[MobileSlider] isMobile():', isMobile());
-  console.log('[MobileSlider] window.innerWidth:', window.innerWidth);
-
-  if (typeof Swiper === 'undefined') {
-    console.error('[MobileSlider] Swiper is not loaded');
-    return;
-  }
+  if (typeof Swiper === 'undefined') return;
 
   const sliders = getSliderElements();
-  console.log('[MobileSlider] Found sliders:', sliders.length, sliders);
 
   if (sliders.length === 0) return;
 
