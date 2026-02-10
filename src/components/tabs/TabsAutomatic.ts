@@ -55,6 +55,12 @@ export class TabsAutomatic {
     const contentContainer = tabsComponent.querySelector('.tabs_component-content');
     if (!contentContainer) return;
 
+    // Only run on desktop
+    if (window.innerWidth <= 991) {
+      (contentContainer as HTMLElement).style.height = '';
+      return;
+    }
+
     const panels = contentContainer.querySelectorAll('.tabs_component-content > *');
     if (panels.length === 0) return;
 
