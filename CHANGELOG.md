@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 3.1.1
+
+### Patch Changes
+
+- 6044556: minor fix
+
 ## 3.1.0
 
 ### Minor Changes
