@@ -38,7 +38,12 @@ export class TabsAutomatic {
       this.tabs.find((tab) => tab.getAttribute('aria-selected') === 'true') || this.firstTab;
 
     if (initialTab) {
-      this.setSelectedTab(initialTab, false);
+      if (window.innerWidth <= 991 && this.tablistNode.closest('.tabs_component')) {
+        // Fix for mobile opacity issue: directly set active state without animation
+        this.setInitialMobileTab(initialTab);
+      } else {
+        this.setSelectedTab(initialTab, false);
+      }
     }
 
     // Set initial height for tabs content
@@ -67,6 +72,22 @@ export class TabsAutomatic {
     const maxHeight = Math.max(...Array.from(panels).map((el) => (el as HTMLElement).offsetHeight));
 
     (contentContainer as HTMLElement).style.height = maxHeight + 'px';
+  }
+
+  setInitialMobileTab(currentTab: HTMLElement) {
+    const controls = currentTab.getAttribute('aria-controls');
+    const tabpanel = controls ? document.getElementById(controls) : null;
+
+    currentTab.setAttribute('aria-selected', 'true');
+    currentTab.tabIndex = 0;
+    currentTab.classList.add('is-active-tab');
+
+    if (tabpanel) {
+      tabpanel.classList.add('is-active-tab');
+      tabpanel.removeAttribute('hidden');
+      tabpanel.style.opacity = '1'; // Ensure it's fully visible
+      tabpanel.removeAttribute('style'); // Then remove clear style to avoid conflict with CSS
+    }
   }
 
   setSelectedTab(currentTab: HTMLElement, setFocus: boolean = true) {
