@@ -146,31 +146,32 @@ export function initFaqCards() {
       });
 
       // Keyboard handler
-      top.addEventListener('keydown', (e: KeyboardEvent) => {
-        switch (e.key) {
+      top.addEventListener('keydown', (e: Event) => {
+        const keyEvent = e as KeyboardEvent;
+        switch (keyEvent.key) {
           case 'Enter':
           case ' ': // Spacebar
-            e.preventDefault();
+            keyEvent.preventDefault();
             toggleCard(card);
             break;
 
           case 'ArrowDown':
-            e.preventDefault();
+            keyEvent.preventDefault();
             focusNextCard(card, cards);
             break;
 
           case 'ArrowUp':
-            e.preventDefault();
+            keyEvent.preventDefault();
             focusPreviousCard(card, cards);
             break;
 
           case 'Home':
-            e.preventDefault();
+            keyEvent.preventDefault();
             focusFirstCard(cards);
             break;
 
           case 'End':
-            e.preventDefault();
+            keyEvent.preventDefault();
             focusLastCard(cards);
             break;
         }

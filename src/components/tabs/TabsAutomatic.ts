@@ -40,36 +40,123 @@ export class TabsAutomatic {
     if (initialTab) {
       this.setSelectedTab(initialTab, false);
     }
+
+    // Set initial height for tabs content
+    this.setTabsContentHeight();
+  }
+
+  /**
+   * Set the tabs content height to the tallest tab panel
+   */
+  setTabsContentHeight() {
+    const tabsComponent = this.tablistNode.closest('.tabs_component');
+    if (!tabsComponent) return;
+
+    const contentContainer = tabsComponent.querySelector('.tabs_component-content');
+    if (!contentContainer) return;
+
+    const panels = contentContainer.querySelectorAll('.tabs_component-content > *');
+    if (panels.length === 0) return;
+
+    const maxHeight = Math.max(...Array.from(panels).map((el) => (el as HTMLElement).offsetHeight));
+
+    (contentContainer as HTMLElement).style.height = maxHeight + 'px';
   }
 
   setSelectedTab(currentTab: HTMLElement, setFocus: boolean = true) {
-    this.tabs.forEach((tab) => {
-      const controls = tab.getAttribute('aria-controls');
-      const tabpanel = controls ? document.getElementById(controls) : null;
+    // Check if tabs are within .tabs_component wrapper
+    const tabsComponent = this.tablistNode.closest('.tabs_component');
+    const useTransition = tabsComponent !== null;
 
-      if (currentTab === tab) {
-        tab.setAttribute('aria-selected', 'true');
-        tab.tabIndex = 0;
-        tab.classList.add('is-active-tab');
-        if (tabpanel) {
-          tabpanel.classList.add('is-active-tab');
-          tabpanel.removeAttribute('hidden');
+    // First, handle outgoing tabs (fade out) if transitions are enabled
+    if (useTransition) {
+      this.tabs.forEach((tab) => {
+        const controls = tab.getAttribute('aria-controls');
+        const tabpanel = controls ? document.getElementById(controls) : null;
+
+        if (currentTab !== tab && tabpanel && !tabpanel.hasAttribute('hidden')) {
+          // Fade out current panel
+          tabpanel.style.transition = 'opacity 0.2s ease-in-out';
+          tabpanel.style.opacity = '0';
+
+          // After fade out, hide it and remove from tab order
+          setTimeout(() => {
+            tab.setAttribute('aria-selected', 'false');
+            tab.tabIndex = -1;
+            tab.classList.remove('is-active-tab');
+            tabpanel.classList.remove('is-active-tab');
+            tabpanel.setAttribute('hidden', 'true');
+            tabpanel.removeAttribute('style');
+          }, 200);
+        } else if (currentTab !== tab) {
+          // No transition needed, just update immediately
+          tab.setAttribute('aria-selected', 'false');
+          tab.tabIndex = -1;
+          tab.classList.remove('is-active-tab');
+          if (tabpanel) {
+            tabpanel.classList.remove('is-active-tab');
+            tabpanel.setAttribute('hidden', 'true');
+            tabpanel.removeAttribute('style');
+          }
+        }
+      });
+    } else {
+      // No transitions - instant switch
+      this.tabs.forEach((tab) => {
+        const controls = tab.getAttribute('aria-controls');
+        const tabpanel = controls ? document.getElementById(controls) : null;
+
+        if (currentTab !== tab) {
+          tab.setAttribute('aria-selected', 'false');
+          tab.tabIndex = -1;
+          tab.classList.remove('is-active-tab');
+          if (tabpanel) {
+            tabpanel.classList.remove('is-active-tab');
+            tabpanel.setAttribute('hidden', 'true');
+            tabpanel.removeAttribute('style');
+          }
+        }
+      });
+    }
+
+    // Handle incoming tab
+    const controls = currentTab.getAttribute('aria-controls');
+    const tabpanel = controls ? document.getElementById(controls) : null;
+
+    currentTab.setAttribute('aria-selected', 'true');
+    currentTab.tabIndex = 0;
+    currentTab.classList.add('is-active-tab');
+
+    if (tabpanel) {
+      tabpanel.classList.add('is-active-tab');
+      tabpanel.removeAttribute('hidden');
+
+      if (useTransition) {
+        // Fade in new panel
+        tabpanel.style.opacity = '0';
+        tabpanel.style.transition = 'opacity 0.2s ease-in-out';
+
+        // Trigger reflow to ensure transition works
+        void tabpanel.offsetWidth;
+
+        setTimeout(() => {
+          tabpanel.style.opacity = '1';
+        }, 10);
+
+        // Clean up inline styles after transition
+        setTimeout(() => {
           tabpanel.removeAttribute('style');
-        }
-        if (setFocus) {
-          tab.focus();
-        }
+          // Update content height after transition completes
+          this.setTabsContentHeight();
+        }, 250);
       } else {
-        tab.setAttribute('aria-selected', 'false');
-        tab.tabIndex = -1;
-        tab.classList.remove('is-active-tab');
-        if (tabpanel) {
-          tabpanel.classList.remove('is-active-tab');
-          tabpanel.setAttribute('hidden', 'true');
-          tabpanel.removeAttribute('style');
-        }
+        tabpanel.removeAttribute('style');
       }
-    });
+    }
+
+    if (setFocus) {
+      currentTab.focus();
+    }
   }
 
   setSelectedToPreviousTab(currentTab: HTMLElement) {
