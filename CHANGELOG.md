@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 3.1.2
+
+### Patch Changes
+
+- f89ba1f: mobile fix
+
 ## 3.1.1
 
 ### Patch Changes
