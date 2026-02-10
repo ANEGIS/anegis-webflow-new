@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 2.3.0
+
+### Minor Changes
+
+- 428617f: accessibility buttons
+
 ## 2.2.1
 
 ### Patch Changes
