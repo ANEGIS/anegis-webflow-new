@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 3.0.1
+
+### Patch Changes
+
+- 91a3c3a: tabs wcag
+
 ## 3.0.0
 
 ### Major Changes
