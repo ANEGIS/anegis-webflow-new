@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 3.0.0
+
+### Major Changes
+
+- 170d0c9: wcag navbar
+
 ## 2.3.0
 
 ### Minor Changes
