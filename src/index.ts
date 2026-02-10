@@ -4,6 +4,7 @@ import { initBlobAnimation } from './animations/BlobAnimation';
 import { initMarquee } from './animations/Marquee';
 import { initScrollLine } from './animations/ScrollLine';
 import { initSmoothScroll } from './animations/SmoothScroll';
+import { initAccessibleButtons } from './components/buttons/AccessibleButtons';
 import { initFaqCards } from './components/cards/FaqCards';
 import { initCustomCursor } from './components/cursor/CustomCursor';
 import { initAccessibleDropdown } from './components/dropdown/AccessibleDropdown';
@@ -34,6 +35,7 @@ window.Webflow.push(() => {
   initCustomCursor();
   initScrollLine();
   initAccessibleDropdown();
+  initAccessibleButtons();
   initMarquee();
   initBlobAnimation();
 });
