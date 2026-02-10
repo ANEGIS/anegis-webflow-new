@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 3.1.0
+
+### Minor Changes
+
+- 28cf9d3: modal
+
 ## 3.0.2
 
 ### Patch Changes
