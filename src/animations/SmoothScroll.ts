@@ -22,6 +22,8 @@ declare class Lenis {
   constructor(options: LenisOptions);
   raf: (time: number) => void;
   destroy: () => void;
+  stop: () => void;
+  start: () => void;
 }
 
 // Desktop breakpoint
@@ -29,6 +31,8 @@ const DESKTOP_BREAKPOINT = 991;
 
 // Flag to enable/disable Lenis smooth scroll
 const LENIS_ENABLED = true;
+
+let lenisInstance: Lenis | null = null;
 
 /**
  * Initialize Lenis smooth scrolling
@@ -46,7 +50,7 @@ export function initSmoothScroll(): void {
   const isDesktop = window.innerWidth > DESKTOP_BREAKPOINT;
   if (!isDesktop) return;
 
-  const lenis = new Lenis({
+  lenisInstance = new Lenis({
     duration: 1.05,
     easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
     orientation: 'vertical',
@@ -60,9 +64,17 @@ export function initSmoothScroll(): void {
   });
 
   function raf(time: number): void {
-    lenis.raf(time);
+    lenisInstance?.raf(time);
     requestAnimationFrame(raf);
   }
 
   requestAnimationFrame(raf);
+}
+
+export function stopLenis() {
+  lenisInstance?.stop();
+}
+
+export function startLenis() {
+  lenisInstance?.start();
 }
