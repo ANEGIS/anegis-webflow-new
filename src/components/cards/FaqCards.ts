@@ -6,6 +6,16 @@ interface GSAP {
 
 declare const gsap: GSAP;
 
+/**
+ * WCAG-Compliant FAQ Cards / Accordion Component
+ *
+ * Accessibility Features:
+ * - Keyboard navigation (Enter, Space, Arrow keys)
+ * - Proper ARIA attributes (aria-expanded, aria-controls, role)
+ * - Focus management
+ * - Screen reader support
+ */
+
 export function initFaqCards() {
   const cards = document.querySelectorAll('.layout_card.is-faq');
   const images = document.querySelectorAll('.about_component-image-outer');
@@ -27,14 +37,49 @@ export function initFaqCards() {
   const innerImages = document.querySelectorAll('.about_component-image-outer img');
   gsap.set(innerImages, { width: '100%', height: '100%', objectFit: 'cover' });
 
-  // 2. Animation Function
+  // 2. Setup ARIA attributes for accessibility
+  cards.forEach((card, index) => {
+    const top = card.querySelector('.layout_card-top');
+    const bottom = card.querySelector('.layout-card-bottom');
+
+    if (top && bottom) {
+      // Generate unique IDs if they don't exist
+      const triggerId = top.id || `faq-trigger-${index}`;
+      const panelId = bottom.id || `faq-panel-${index}`;
+
+      top.id = triggerId;
+      bottom.id = panelId;
+
+      // Set ARIA attributes on trigger (button role)
+      top.setAttribute('role', 'button');
+      top.setAttribute('aria-expanded', 'false');
+      top.setAttribute('aria-controls', panelId);
+      top.setAttribute('tabindex', '0');
+
+      // Set ARIA attributes on panel
+      bottom.setAttribute('role', 'region');
+      bottom.setAttribute('aria-labelledby', triggerId);
+      bottom.setAttribute('aria-hidden', 'true');
+    }
+  });
+
+  // 3. Animation Function with ARIA updates
   function animateCard(card: Element, isOpen: boolean) {
     const bottom = card.querySelector('.layout-card-bottom');
     const iconWrapper = card.querySelector('.layout_action-icon');
+    const top = card.querySelector('.layout_card-top');
 
     // Get ID and find the SPECIFIC matching image
     const id = card.getAttribute('data-card');
     const img = document.querySelector(`.about_component-image-outer[data-image="${id}"]`);
+
+    // Update ARIA attributes
+    if (top) {
+      top.setAttribute('aria-expanded', String(isOpen));
+    }
+    if (bottom) {
+      bottom.setAttribute('aria-hidden', String(!isOpen));
+    }
 
     if (isOpen) {
       if (bottom) {
@@ -46,8 +91,6 @@ export function initFaqCards() {
         // Force display block first, then animate opacity
         gsap.set(img, { display: 'block', zIndex: 2 });
         gsap.to(img, { autoAlpha: 1, duration: 0.6, ease: 'power3.inOut', overwrite: true });
-      } else {
-        console.warn(`No image found for Card ID: ${id}`);
       }
     } else {
       gsap.to(bottom, { height: 0, duration: 0.6, ease: 'power3.inOut' });
@@ -65,7 +108,7 @@ export function initFaqCards() {
     }
   }
 
-  // 3. Find the first card that actually has a matching image and open it
+  // 4. Find the first card that actually has a matching image and open it
   const firstValidCard = Array.from(cards).find((card) => {
     const id = card.getAttribute('data-card');
     return document.querySelector(`.about_component-image-outer[data-image="${id}"]`);
@@ -75,28 +118,92 @@ export function initFaqCards() {
     animateCard(firstValidCard, true);
   }
 
-  // 4. Click Handlers
+  // 5. Toggle handler (shared by click and keyboard)
+  function toggleCard(card: Element) {
+    const bottom = card.querySelector('.layout-card-bottom');
+    const currentHeight = bottom ? gsap.getProperty(bottom, 'height') : 0;
+    const isActive = parseFloat(String(currentHeight)) > 0;
+
+    // Close all others
+    cards.forEach((c) => {
+      if (c !== card) animateCard(c, false);
+    });
+
+    // Toggle current
+    if (!isActive) {
+      animateCard(card, true);
+    }
+  }
+
+  // 6. Event Handlers (Click + Keyboard)
   cards.forEach((card) => {
     const top = card.querySelector('.layout_card-top');
 
     if (top) {
+      // Click handler
       top.addEventListener('click', () => {
-        const bottom = card.querySelector('.layout-card-bottom');
-        // Check if active using gsap.getProperty (returns number/string)
-        // We cast to number if it returns number, or check > 0
-        const currentHeight = bottom ? gsap.getProperty(bottom, 'height') : 0;
-        const isActive = parseFloat(String(currentHeight)) > 0;
+        toggleCard(card);
+      });
 
-        // Close all others
-        cards.forEach((c) => {
-          if (c !== card) animateCard(c, false);
-        });
+      // Keyboard handler
+      top.addEventListener('keydown', (e: KeyboardEvent) => {
+        switch (e.key) {
+          case 'Enter':
+          case ' ': // Spacebar
+            e.preventDefault();
+            toggleCard(card);
+            break;
 
-        // Toggle current
-        if (!isActive) {
-          animateCard(card, true);
+          case 'ArrowDown':
+            e.preventDefault();
+            focusNextCard(card, cards);
+            break;
+
+          case 'ArrowUp':
+            e.preventDefault();
+            focusPreviousCard(card, cards);
+            break;
+
+          case 'Home':
+            e.preventDefault();
+            focusFirstCard(cards);
+            break;
+
+          case 'End':
+            e.preventDefault();
+            focusLastCard(cards);
+            break;
         }
       });
     }
   });
+
+  // 7. Focus management functions
+  function focusNextCard(currentCard: Element, cardsList: NodeListOf<Element>) {
+    const cardsArray = Array.from(cardsList);
+    const currentIndex = cardsArray.indexOf(currentCard);
+    const nextIndex = (currentIndex + 1) % cardsArray.length;
+    const nextTop = cardsArray[nextIndex].querySelector('.layout_card-top') as HTMLElement;
+    if (nextTop) nextTop.focus();
+  }
+
+  function focusPreviousCard(currentCard: Element, cardsList: NodeListOf<Element>) {
+    const cardsArray = Array.from(cardsList);
+    const currentIndex = cardsArray.indexOf(currentCard);
+    const prevIndex = currentIndex === 0 ? cardsArray.length - 1 : currentIndex - 1;
+    const prevTop = cardsArray[prevIndex].querySelector('.layout_card-top') as HTMLElement;
+    if (prevTop) prevTop.focus();
+  }
+
+  function focusFirstCard(cardsList: NodeListOf<Element>) {
+    const firstTop = cardsList[0]?.querySelector('.layout_card-top') as HTMLElement;
+    if (firstTop) firstTop.focus();
+  }
+
+  function focusLastCard(cardsList: NodeListOf<Element>) {
+    const lastTop = cardsList[cardsList.length - 1]?.querySelector(
+      '.layout_card-top'
+    ) as HTMLElement;
+    if (lastTop) lastTop.focus();
+  }
 }
