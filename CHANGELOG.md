@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 2.2.1
+
+### Patch Changes
+
+- bdb6b73: remove logs
+
 ## 2.2.0
 
 ### Minor Changes
