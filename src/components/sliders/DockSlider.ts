@@ -142,31 +142,24 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number):
 function initDockHoverEffect(): void {
   const navItems = document.querySelectorAll<HTMLElement>('.nav-item');
 
-  console.log('DockSlider: initDockHoverEffect called');
-  console.log('DockSlider: Found', navItems.length, 'nav items');
-
   if (navItems.length === 0) return;
 
   // Simple hover effect - only toggle class on the hovered item
   // BUT only if we're on desktop (> 991px) where Swiper is NOT active
-  navItems.forEach((item, index) => {
+  navItems.forEach((item) => {
     item.addEventListener('mouseenter', () => {
       // Only apply hover effect on desktop/tablet (where Swiper is NOT active)
       if (!isMobile()) {
-        console.log(`DockSlider: Hover on item ${index} (desktop mode)`);
         item.classList.add('hover');
       }
     });
 
     item.addEventListener('mouseleave', () => {
       if (!isMobile()) {
-        console.log(`DockSlider: Leave item ${index} (desktop mode)`);
         item.classList.remove('hover');
       }
     });
   });
-
-  console.log('DockSlider: Hover effect initialized on', navItems.length, 'items');
 }
 
 /**
