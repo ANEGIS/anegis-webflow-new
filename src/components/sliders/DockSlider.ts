@@ -95,7 +95,7 @@ function injectDockStyles(): void {
     @media screen and (max-width: ${MOBILE_BREAKPOINT}px) {
       /* Mobile Tooltip Styles */
       [data-slider-dock] .nav-item__tooltip {
-        font-size: 14px !important;
+        font-size: 10px !important;
         min-width: 140px !important;
         width: max-content !important;
       }
