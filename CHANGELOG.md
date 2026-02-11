@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 3.1.6
+
+### Patch Changes
+
+- 090be50: dock fix
+
 ## 3.1.5
 
 ### Patch Changes
