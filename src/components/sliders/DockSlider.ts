@@ -25,6 +25,23 @@ declare class Swiper {
   destroy: (deleteInstance?: boolean, cleanStyles?: boolean) => void;
 }
 
+interface GSAP {
+  to(target: string | Element | NodeList | Element[], vars: Record<string, unknown>): GSAPTween;
+  fromTo(
+    target: string | Element | NodeList | Element[],
+    fromVars: Record<string, unknown>,
+    toVars: Record<string, unknown>
+  ): GSAPTween;
+  set(target: string | Element | NodeList | Element[], vars: Record<string, unknown>): void;
+  killTweensOf(target: string | Element | NodeList | Element[]): void;
+}
+
+interface GSAPTween {
+  delay(value: number): GSAPTween;
+}
+
+declare const gsap: GSAP;
+
 // Store active slider instances
 const activeDockSliders = new Map<HTMLElement, SwiperInstance>();
 
@@ -50,6 +67,12 @@ function initDockSlider(element: HTMLElement): void {
   const navItems = element.querySelectorAll<HTMLElement>('.nav-item');
   navItems.forEach((item) => {
     item.classList.remove('hover');
+    // Clean up inline styles from desktop interactions
+    const link = item.querySelector<HTMLElement>('.nav-item__link');
+    if (link) {
+      link.style.transform = '';
+      link.style.transition = '';
+    }
   });
 
   // Use 'auto' to respect Webflow CSS widths (e.g., max-width: 6em)
@@ -136,28 +159,119 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number):
 
 /**
  * Initialize hover effect for dock items
- * Only enlarges the hovered item (no sibling effects)
- * Only active on desktop/tablet where dock is static (not a swiper)
+ * Only enlarges the hovered item's LINK
+ * Slides the tooltip from the bottom
  */
 function initDockHoverEffect(): void {
-  const navItems = document.querySelectorAll<HTMLElement>('.nav-item');
+  const dockWrappers = document.querySelectorAll<HTMLElement>('[data-slider-dock]');
 
-  if (navItems.length === 0) return;
+  dockWrappers.forEach((wrapper) => {
+    const navItems = Array.from(wrapper.querySelectorAll<HTMLElement>('.nav-item'));
+    if (navItems.length === 0) return;
 
-  // Simple hover effect - only toggle class on the hovered item
-  // BUT only if we're on desktop (> 991px) where Swiper is NOT active
-  navItems.forEach((item) => {
-    item.addEventListener('mouseenter', () => {
-      // Only apply hover effect on desktop/tablet (where Swiper is NOT active)
-      if (!isMobile()) {
-        item.classList.add('hover');
+    // Helper to apply scales
+    const applyScales = (hoveredIndex: number) => {
+      navItems.forEach((item, index) => {
+        const link = item.querySelector<HTMLElement>('.nav-item__link');
+        if (!link) return;
+
+        // Ensure transition is set for smooth scaling
+        link.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        link.style.transformOrigin = 'center bottom'; // Scale from center bottom
+
+        if (index === hoveredIndex) {
+          link.style.transform = 'scale(2)'; // Slightly bigger as requested
+          item.style.zIndex = '100'; // Active item must be on top of everything
+        } else if (index === hoveredIndex - 1 || index === hoveredIndex + 1) {
+          link.style.transform = 'scale(1.25)';
+          item.style.zIndex = '50'; // Neighbors below active but above others
+        } else {
+          link.style.transform = 'scale(1)';
+          item.style.zIndex = '1';
+        }
+      });
+    };
+
+    // Helper to reset scales
+    const resetScales = () => {
+      navItems.forEach((item) => {
+        const link = item.querySelector<HTMLElement>('.nav-item__link');
+        if (link) {
+          link.style.transform = 'scale(1)';
+        }
+        item.style.zIndex = '';
+        item.classList.remove('hover');
+        // Hide tooltip
+        const tooltip = item.querySelector<HTMLElement>('.nav-item__tooltip');
+        if (tooltip) {
+          gsap.to(tooltip, { opacity: 0, y: 0, duration: 0.2, overwrite: true });
+        }
+      });
+    };
+
+    navItems.forEach((item, index) => {
+      // Ensure relative positioning for tooltip context
+      item.style.position = 'relative';
+
+      // Ensure link is explicitly layered below the tooltip
+      const link = item.querySelector<HTMLElement>('.nav-item__link');
+      if (link) {
+        link.style.position = 'relative';
+        link.style.zIndex = '2'; // Base level for icon
       }
+
+      // Setup Tooltip Initial State
+      const tooltip = item.querySelector<HTMLElement>('.nav-item__tooltip');
+      if (tooltip) {
+        gsap.set(tooltip, {
+          position: 'absolute',
+          bottom: '100%',
+          left: '50%',
+          xPercent: -50,
+          marginBottom: '-20px',
+          opacity: 0,
+          pointerEvents: 'none',
+          display: 'block',
+        });
+      }
+
+      // Mouse Enter Item
+      item.addEventListener('mouseenter', () => {
+        if (isMobile()) return;
+
+        applyScales(index);
+        item.classList.add('hover');
+
+        if (tooltip) {
+          gsap.to(tooltip, {
+            opacity: 1,
+            y: -55,
+            duration: 0.3,
+            ease: 'power2.out',
+            overwrite: true,
+          });
+        }
+      });
+
+      // Mouse Leave Item
+      item.addEventListener('mouseleave', () => {
+        if (isMobile()) return;
+        if (tooltip) {
+          gsap.to(tooltip, {
+            opacity: 0,
+            y: 0,
+            duration: 0.2,
+            overwrite: true,
+          });
+        }
+      });
     });
 
-    item.addEventListener('mouseleave', () => {
-      if (!isMobile()) {
-        item.classList.remove('hover');
-      }
+    // Mouse Leave Link List (Reset layout)
+    const list = wrapper.querySelector('.nav-list') || wrapper;
+    list.addEventListener('mouseleave', () => {
+      if (isMobile()) return;
+      resetScales();
     });
   });
 }
