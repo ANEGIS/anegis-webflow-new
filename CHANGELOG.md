@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 3.1.7
+
+### Patch Changes
+
+- 2165b1d: dock font size fix
+
 ## 3.1.6
 
 ### Patch Changes
