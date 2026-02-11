@@ -97,7 +97,7 @@ class MobileTabs {
     this.content.style.display = 'none';
 
     // For each tab pair, insert the pane right after the pill
-    this.tabPairs.forEach(({ pill, pane }) => {
+    this.tabPairs.forEach(({ pill, pane }, index) => {
       // Create a wrapper div to hold the pane in mobile layout
       const wrapper = document.createElement('div');
       wrapper.className = WRAPPER_CLASS;
@@ -106,11 +106,10 @@ class MobileTabs {
       // Get the cloned pane
       const clonedPane = wrapper.firstElementChild as HTMLElement;
 
-      // Set up accordion behavior - only show active tab content
-      const isActive =
-        pill.classList.contains('w--current') || pill.classList.contains('is-active-tab');
+      // Behavior update: Only keep the LAST one opened and disable switching
+      const isLast = index === this.tabPairs.length - 1;
 
-      if (isActive) {
+      if (isLast) {
         clonedPane.removeAttribute('hidden');
         clonedPane.style.display = '';
         wrapper.classList.add('is-open');
@@ -123,10 +122,18 @@ class MobileTabs {
       // Insert after the pill
       pill.insertAdjacentElement('afterend', wrapper);
 
-      // Override click behavior for mobile accordion
-      pill.addEventListener('click', this.handleMobileTabClick);
+      // FORCE DISABLE WEBFLOW NATIVE TAB SWITCHING
+      // We stop propagation in the capture phase so Webflow's native scripts never see the click,
+      // but we do NOT call preventDefault so that <a> links still work.
+      pill.addEventListener('click', this.preventWebflowClick, { capture: true });
     });
   }
+
+  private preventWebflowClick = (e: Event): void => {
+    // Stop other listeners (Webflow's tab script) from seeing this click
+    e.stopImmediatePropagation();
+    // Do NOT call preventDefault() - we want <a> links to still navigate
+  };
 
   private handleMobileTabClick = (e: Event): void => {
     const clickedPill = e.currentTarget as HTMLElement;
@@ -160,9 +167,12 @@ class MobileTabs {
     this.isMobileLayout = false;
     this.container.classList.remove(MOBILE_CLASS);
 
-    // Remove click listeners
+    // Remove click listeners and reset styles
     this.tabPairs.forEach(({ pill }) => {
       pill.removeEventListener('click', this.handleMobileTabClick);
+      pill.removeEventListener('click', this.preventWebflowClick, { capture: true });
+      // Reset pointer events if they were ever set
+      pill.style.pointerEvents = '';
     });
 
     // Remove all mobile wrappers
