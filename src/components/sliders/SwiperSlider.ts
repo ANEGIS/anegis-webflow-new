@@ -88,7 +88,7 @@ export function initSwiperSlider() {
     // Build options for standard sliders (mobile sliders are handled by MobileSlider.ts)
     const options: SwiperOptions = {
       slidesPerView: mobileSlidesPerView, // Mobile value as default
-      spaceBetween: 36,
+      spaceBetween: 0,
       loop: false,
       centeredSlides: true, // Always center for standard sliders
       navigation: {
@@ -153,7 +153,7 @@ function updateScale(instance: SwiperInstance) {
       slide.style.transform = 'scale(1)';
       slide.style.transition = 'transform 0.4s ease';
     } else {
-      slide.style.transform = 'scale(0.8)';
+      slide.style.transform = 'scale(0.9)';
       slide.style.transition = 'transform 0.4s ease';
     }
   });

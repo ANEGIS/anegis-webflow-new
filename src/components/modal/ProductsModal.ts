@@ -110,7 +110,7 @@ export function initProductsModal() {
       });
 
       // Prepare target content
-      gsap.set(targetContent, { display: 'block', opacity: 0, y: 20 });
+      gsap.set(targetContent, { display: 'block', opacity: 1 });
 
       // Animate Modal Wrapper
       const tl = gsap.timeline();
@@ -120,23 +120,11 @@ export function initProductsModal() {
         opacity: 0,
         zIndex: 2147483647, // Max safe 32-bit integer to avoid overflow
         pointerEvents: 'auto',
-      })
-        .to(modal, {
-          opacity: 1,
-          duration: 0.4,
-          ease: 'power2.out',
-        })
-        .to(
-          targetContent,
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.4,
-            ease: 'back.out(1.7)',
-            clearProps: 'transform',
-          },
-          '-=0.2'
-        );
+      }).to(modal, {
+        opacity: 1,
+        duration: 0.4,
+        ease: 'power2.out',
+      });
     }
   };
 
