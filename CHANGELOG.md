@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 3.1.5
+
+### Patch Changes
+
+- 77ab9dc: custom cursor disable
+
 ## 3.1.4
 
 ### Patch Changes
