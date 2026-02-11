@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 3.1.4
+
+### Patch Changes
+
+- ff376f9: dock fix
+
 ## 3.1.3
 
 ### Patch Changes
