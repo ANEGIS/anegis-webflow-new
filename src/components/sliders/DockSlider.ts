@@ -3,6 +3,9 @@
  */
 
 interface SwiperInstance {
+  slides: HTMLElement[];
+  activeIndex: number;
+  update: () => void;
   destroy: (deleteInstance?: boolean, cleanStyles?: boolean) => void;
 }
 
@@ -14,14 +17,26 @@ interface SwiperOptions {
   centeredSlides?: boolean;
   freeMode?: boolean;
   watchOverflow?: boolean;
+  observer?: boolean;
+  observeParents?: boolean;
+  resizeObserver?: boolean;
+  updateOnWindowResize?: boolean;
   navigation?: {
     nextEl: HTMLElement | null;
     prevEl: HTMLElement | null;
+  };
+  on?: {
+    init?: (instance: SwiperInstance) => void;
+    slideChange?: (instance: SwiperInstance) => void;
+    transitionEnd?: (instance: SwiperInstance) => void;
   };
 }
 
 declare class Swiper {
   constructor(element: HTMLElement, options: SwiperOptions);
+  slides: HTMLElement[];
+  activeIndex: number;
+  update: () => void;
   destroy: (deleteInstance?: boolean, cleanStyles?: boolean) => void;
 }
 
@@ -45,9 +60,8 @@ declare const gsap: GSAP;
 // Store active slider instances
 const activeDockSliders = new Map<HTMLElement, SwiperInstance>();
 
-// Mobile breakpoint - only mobile phones (767px and below)
-// Tablet (768-991px) and desktop behave the same: static dock with hover effects
-const MOBILE_BREAKPOINT = 767;
+// Mobile/Tablet breakpoint - anything below desktop (991px and below)
+const MOBILE_BREAKPOINT = 991;
 
 /**
  * Check if we're on mobile (landscape or portrait)
@@ -57,17 +71,139 @@ function isMobile(): boolean {
 }
 
 /**
+ * Inject specific CSS for dock swiper to handle tooltips and mobile layout issues
+ */
+function injectDockStyles(): void {
+  const id = 'dock-custom-styles';
+  if (document.getElementById(id)) return;
+
+  const style = document.createElement('style');
+  style.id = id;
+  style.innerHTML = `
+    /* Base Tooltip Styles (Desktop) */
+    [data-slider-dock] .nav-item__tooltip {
+      font-size: 10px !important;
+      min-height: 1.75rem !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      white-space: nowrap !important;
+      padding: 0 12px !important;
+    }
+
+    @media screen and (max-width: ${MOBILE_BREAKPOINT}px) {
+      /* Mobile Tooltip Styles */
+      [data-slider-dock] .nav-item__tooltip {
+        font-size: 14px !important;
+        min-width: 140px !important;
+        width: max-content !important;
+      }
+
+      [data-slider-dock].swiper {
+        width: 100% !important;
+        display: block !important;
+        overflow: visible !important;
+      }
+      [data-slider-dock] .swiper-wrapper {
+        display: flex !important;
+        width: auto !important;
+      }
+      [data-slider-dock] .swiper-slide {
+        width: 20% !important;
+        flex-shrink: 0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        max-width: none !important;
+        height: auto !important;
+      }
+      [data-slider-dock] .nav-item__link {
+        width: 100% !important;
+        max-width: 7em !important;
+      }
+      [data-slider-dock] .nav-item__tollitp-decor {
+        width: 12px !important;
+        height: 12px !important;
+        flex-shrink: 0 !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+/**
+ * Update scale for mobile slides
+ */
+function updateMobileScale(instance: SwiperInstance): void {
+  instance.slides.forEach((slide, index) => {
+    const link = slide.querySelector<HTMLElement>('.nav-item__link');
+    const tooltip = slide.querySelector<HTMLElement>('.nav-item__tooltip');
+    if (!link) return;
+
+    link.style.transition = 'transform 0.4s ease';
+    link.style.transformOrigin = 'center bottom';
+
+    const isActive = index === instance.activeIndex;
+    const isNeighbor = index === instance.activeIndex - 1 || index === instance.activeIndex + 1;
+
+    if (isActive) {
+      link.style.transform = 'scale(1.4)';
+      slide.style.zIndex = '100';
+
+      // Show tooltip for active slide
+      if (tooltip) {
+        gsap.to(tooltip, {
+          opacity: 1,
+          y: -55,
+          scale: 1,
+          duration: 0.3,
+          ease: 'power2.out',
+          overwrite: true,
+        });
+      }
+    } else if (isNeighbor) {
+      link.style.transform = 'scale(1.1)';
+      slide.style.zIndex = '50';
+
+      // Hide tooltip for non-active
+      if (tooltip) {
+        gsap.to(tooltip, {
+          opacity: 0,
+          y: 0,
+          scale: 0.8,
+          duration: 0.2,
+          overwrite: true,
+        });
+      }
+    } else {
+      link.style.transform = 'scale(0.8)';
+      slide.style.zIndex = '1';
+
+      // Hide tooltip for others
+      if (tooltip) {
+        gsap.to(tooltip, {
+          opacity: 0,
+          y: 0,
+          scale: 0.8,
+          duration: 0.2,
+          overwrite: true,
+        });
+      }
+    }
+  });
+}
+
+/**
  * Initialize a single dock slider
  */
 function initDockSlider(element: HTMLElement): void {
   if (activeDockSliders.has(element)) return; // Already initialized
 
-  // Remove any hover classes from nav items before Swiper initializes
-  // This prevents CSS transform conflicts with Swiper's calculations
+  // Remove any hover classes and reset widths from nav items before Swiper initializes
   const navItems = element.querySelectorAll<HTMLElement>('.nav-item');
   navItems.forEach((item) => {
     item.classList.remove('hover');
-    // Clean up inline styles from desktop interactions
+    item.style.width = ''; // Reset width for Swiper to take over or auto-measure
     const link = item.querySelector<HTMLElement>('.nav-item__link');
     if (link) {
       link.style.transform = '';
@@ -75,19 +211,13 @@ function initDockSlider(element: HTMLElement): void {
     }
   });
 
-  // Use 'auto' to respect Webflow CSS widths (e.g., max-width: 6em)
-  const slidesPerView = 'auto';
-
-  // Read optional space between slides
   const spaceAttr = element.getAttribute('data-dock-space');
   const spaceBetween = spaceAttr ? parseFloat(spaceAttr) : 16;
 
-  // Try to find arrows inside the swiper, or in the parent container
   const parent = element.parentElement;
   let nextEl = element.querySelector('.swiper-arrow.is-next') as HTMLElement | null;
   let prevEl = element.querySelector('.swiper-arrow.is-prev') as HTMLElement | null;
 
-  // If not found inside, check parent container
   if (!nextEl && parent) {
     nextEl = parent.querySelector('.swiper-arrow.is-next') as HTMLElement | null;
   }
@@ -95,21 +225,47 @@ function initDockSlider(element: HTMLElement): void {
     prevEl = parent.querySelector('.swiper-arrow.is-prev') as HTMLElement | null;
   }
 
-  const options: SwiperOptions = {
-    slidesPerView: slidesPerView,
-    slidesPerGroup: 1, // Advance one slide at a time
-    spaceBetween: spaceBetween,
-    loop: false,
-    freeMode: false,
-    watchOverflow: true,
-    navigation: {
-      nextEl: nextEl,
-      prevEl: prevEl,
-    },
-  };
+  // Force container constraints to prevent astronomical width expansion
+  element.style.width = '100%';
+  element.style.overflow = 'hidden';
 
-  const instance = new Swiper(element, options);
-  activeDockSliders.set(element, instance);
+  // WRAP IN TIMEOUT: Webflow often needs a moment to settle layout
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      // Final check – don't double init
+      if (activeDockSliders.has(element)) return;
+
+      const options: SwiperOptions = {
+        slidesPerView: 'auto', // Use auto with the forced CSS widths
+        slidesPerGroup: 1,
+        spaceBetween: spaceBetween,
+        loop: false,
+        centeredSlides: true,
+        freeMode: false,
+        watchOverflow: true,
+        observer: true,
+        observeParents: true,
+        resizeObserver: true,
+        updateOnWindowResize: true,
+        navigation: {
+          nextEl: nextEl,
+          prevEl: prevEl,
+        },
+        on: {
+          init: (swiper) => {
+            updateMobileScale(swiper);
+            // Re-check after a bit to snap into place
+            setTimeout(() => swiper.update(), 100);
+          },
+          slideChange: (swiper) => updateMobileScale(swiper),
+          transitionEnd: (swiper) => updateMobileScale(swiper),
+        },
+      };
+
+      const instance = new Swiper(element, options);
+      activeDockSliders.set(element, instance);
+    }, 50);
+  });
 }
 
 /**
@@ -285,6 +441,9 @@ export function initDockSliders(): void {
   const sliders = getDockSliderElements();
 
   if (sliders.length === 0) return;
+
+  // Ensure dock styles are present
+  injectDockStyles();
 
   // Initial check
   handleDockSliders();

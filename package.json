@@ -33,7 +33,8 @@
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "release": "changeset publish",
-    "update": "pnpm update -i -L -r"
+    "update": "pnpm update -i -L -r",
+    "push": "git pull --rebase origin master && git push"
   },
   "devDependencies": {
     "@changesets/changelog-git": "^0.2.1",
