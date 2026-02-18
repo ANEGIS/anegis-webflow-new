@@ -6,7 +6,7 @@ import { initScrollLine } from './animations/ScrollLine';
 import { initSmoothScroll } from './animations/SmoothScroll';
 import { initAccessibleButtons } from './components/buttons/AccessibleButtons';
 import { initFaqCards } from './components/cards/FaqCards';
-// import { initCustomCursor } from './components/cursor/CustomCursor';
+import { initProductCards } from './components/cards/ProductCards';
 import { initAccessibleDropdown } from './components/dropdown/AccessibleDropdown';
 import { initNavAccessibility } from './components/layout/NavAccessibility';
 import { initSmartNav } from './components/layout/SmartNav';
@@ -32,6 +32,8 @@ window.Webflow.push(() => {
   initMegaMenuAccordion();
   initMobileNavScroll();
   initFaqCards();
+  initProductCards();
+
   initSwiperSlider();
   initMobileSliders();
   initDockSliders();
