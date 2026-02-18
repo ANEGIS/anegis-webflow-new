@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 3.1.9
+
+### Patch Changes
+
+- b4083e2: product tile hover
+
 ## 3.1.8
 
 ### Patch Changes
