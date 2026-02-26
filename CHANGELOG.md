@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 4.0.0
+
+### Major Changes
+
+- 3c633cf: changes pack
+
 ## 3.1.9
 
 ### Patch Changes
