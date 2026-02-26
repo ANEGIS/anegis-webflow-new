@@ -1,6 +1,9 @@
+import { initChallengeList } from '$utils/challengeList';
 import { greetUser } from '$utils/greet';
 
 import { initBlobAnimation } from './animations/BlobAnimation';
+import { initCMSFlow } from './animations/CMSFlow';
+import { initDecorAnimation } from './animations/DecorAnimation';
 import { initMarquee } from './animations/Marquee';
 import { initScrollLine } from './animations/ScrollLine';
 import { initSmoothScroll } from './animations/SmoothScroll';
@@ -44,4 +47,7 @@ window.Webflow.push(() => {
   initMarquee();
   initBlobAnimation();
   initProductsModal();
+  initCMSFlow();
+  initChallengeList();
+  initDecorAnimation();
 });

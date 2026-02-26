@@ -25,6 +25,9 @@ interface SwiperOptions {
   centeredSlides?: boolean;
   freeMode?: boolean;
   watchOverflow?: boolean;
+  breakpoints?: {
+    [width: number]: Omit<SwiperOptions, 'breakpoints'>;
+  };
   navigation?: {
     nextEl: HTMLElement | null;
     prevEl: HTMLElement | null;
@@ -79,7 +82,20 @@ function initSlider(element: HTMLElement): void {
 
   // Store original styles before modifying
   const slides = element.querySelectorAll<HTMLElement>('.swiper-slide');
+  const wrapper = element.querySelector<HTMLElement>('.swiper-wrapper');
   const styleMap = new Map<HTMLElement, CSSStyleDeclaration>();
+
+  if (wrapper) {
+    const originalStyle = wrapper.style.cssText;
+    const tempDiv = document.createElement('div');
+    tempDiv.style.cssText = originalStyle;
+    styleMap.set(wrapper, tempDiv.style);
+
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'row';
+    wrapper.style.gap = '0';
+    wrapper.style.gridGap = '0';
+  }
 
   slides.forEach((slide) => {
     // Clone the current inline style
@@ -106,12 +122,21 @@ function initSlider(element: HTMLElement): void {
   // Result: You see ~2 slides (1 full + 90% of next)
   // For "1 slide + 10% peek", use slidesPerView: 1.1
 
+  const desktopSlidesAttr = element.getAttribute('data-desktop-slides');
+  const desktopSlides = desktopSlidesAttr ? parseFloat(desktopSlidesAttr) : 3.5;
+
   const options: SwiperOptions = {
     slidesPerView: slidesPerView,
     spaceBetween: spaceBetween,
     loop: false,
     freeMode: false,
     watchOverflow: true,
+    breakpoints: {
+      992: {
+        slidesPerView: desktopSlides,
+        spaceBetween: 0,
+      },
+    },
     navigation: {
       nextEl: nextEl,
       prevEl: prevEl,
@@ -157,7 +182,16 @@ function handleSliders(): void {
   const mobile = isMobile();
 
   sliders.forEach((slider) => {
-    if (mobile) {
+    let shouldInit = mobile;
+
+    if (!mobile) {
+      const wrapper = slider.querySelector('.swiper-wrapper');
+      if (wrapper && wrapper.children.length > 4) {
+        shouldInit = true;
+      }
+    }
+
+    if (shouldInit) {
       initSlider(slider);
     } else {
       destroySlider(slider);
