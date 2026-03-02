@@ -11,6 +11,7 @@ import { initAccessibleButtons } from './components/buttons/AccessibleButtons';
 import { initFaqCards } from './components/cards/FaqCards';
 import { initProductCards } from './components/cards/ProductCards';
 import { initAccessibleDropdown } from './components/dropdown/AccessibleDropdown';
+import { initCaseStudyFilters } from './components/filters/CaseStudyFilters';
 import { initNavAccessibility } from './components/layout/NavAccessibility';
 import { initSmartNav } from './components/layout/SmartNav';
 import { initMegaMenuAccordion } from './components/menu/MegaMenuAccordion';
@@ -50,4 +51,5 @@ window.Webflow.push(() => {
   initCMSFlow();
   initChallengeList();
   initDecorAnimation();
+  initCaseStudyFilters();
 });
