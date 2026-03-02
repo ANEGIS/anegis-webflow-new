@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 4.0.1
+
+### Patch Changes
+
+- e35c5bd: case study filters
+
 ## 4.0.0
 
 ### Major Changes
