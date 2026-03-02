@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 4.0.2
+
+### Patch Changes
+
+- 9b8d300: loading fix
+
 ## 4.0.1
 
 ### Patch Changes
