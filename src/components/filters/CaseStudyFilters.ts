@@ -73,9 +73,52 @@ declare global {
 // ---------------------------------------------------------------------------
 
 export function initCaseStudyFilters() {
+  // ---- Loading state: block interactions until Finsweet is ready ----
+  const loadingStyle = document.createElement('style');
+  loadingStyle.textContent = `
+    @keyframes csFilterShimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .cs-filters-loading {
+      position: relative;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+    .cs-filters-loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.08) 50%, transparent 75%);
+      background-size: 200% 100%;
+      animation: csFilterShimmer 1.8s ease-in-out infinite;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+  `;
+  document.head.appendChild(loadingStyle);
+
+  // Apply loading state immediately to filter controls
+  const dropdownWrappers = document.querySelectorAll<HTMLElement>('.dropdown_wrapper');
+  const searchInput = document.querySelector<HTMLInputElement>('[data-search="name"]');
+
+  dropdownWrappers.forEach((el) => el.classList.add('cs-filters-loading'));
+  if (searchInput) {
+    const searchWrapper = searchInput.closest('.form_field-wrapper') || searchInput.parentElement;
+    if (searchWrapper) (searchWrapper as HTMLElement).classList.add('cs-filters-loading');
+  }
+
+  function removeLoadingState() {
+    dropdownWrappers.forEach((el) => el.classList.remove('cs-filters-loading'));
+    if (searchInput) {
+      const searchWrapper = searchInput.closest('.form_field-wrapper') || searchInput.parentElement;
+      if (searchWrapper) (searchWrapper as HTMLElement).classList.remove('cs-filters-loading');
+    }
+    loadingStyle.remove();
+  }
+
   // ---- Gather filter UI elements ----
   const FILTER_GROUPS = ['obszary', 'rozwiazania', 'branze'] as const;
-  const searchInput = document.querySelector<HTMLInputElement>('[data-search="name"]');
 
   // Build checkbox state
   const checkboxes: CheckboxState[] = [];
@@ -157,7 +200,10 @@ export function initCaseStudyFilters() {
             inst.listElement?.hasAttribute('fs-list-element')
         ) || listInstances[0];
 
-      if (!listInstance) return;
+      if (!listInstance) {
+        removeLoadingState();
+        return;
+      }
 
       // Wait for all paginated items to be loaded
       if (listInstance.loadingPaginatedItems) {
@@ -172,6 +218,9 @@ export function initCaseStudyFilters() {
       if (nestingPromises.length > 0) {
         await Promise.all(nestingPromises);
       }
+
+      // ✅ Everything loaded — remove loading state
+      removeLoadingState();
 
       // ---- Empty state element ----
       const emptyEl = document.querySelector<HTMLElement>('[data-empty]');
@@ -297,7 +346,6 @@ export function initCaseStudyFilters() {
       });
 
       // ---- Dropdown wrappers (disabled while searching) ----
-      const dropdownWrappers = document.querySelectorAll<HTMLElement>('.dropdown_wrapper');
 
       function updateDropdownState() {
         dropdownWrappers.forEach((el) => {
