@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 4.0.4
+
+### Patch Changes
+
+- 5cefe53: minor bugs fix
+
 ## 4.0.3
 
 ### Patch Changes
