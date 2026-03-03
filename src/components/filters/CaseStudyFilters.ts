@@ -4,14 +4,9 @@
  * Custom filtering for the case study collection list powered by
  * Finsweet Attributes v2 List API.
  *
- * Two filter groups:
- *
- * 1. Radio filters — grouped by `name` attribute (obszary, rozwiazania, branze).
- *    Each radio's `.checkbox_text` label matches text inside the corresponding
- *    `[fs-list-nest="<group>"]` nested list within each item's `.for-filters` div.
- *
- * 2. Search bar — `[data-search="name"]` input filters items by text content
- *    of `[data-filter="name"]` inside each item.
+ * Radio filters — grouped by `name` attribute (obszary, rozwiazania, branze).
+ * Each radio's `.checkbox_text` label matches text inside the corresponding
+ * `[fs-list-nest="<group>"]` nested list within each item's `.for-filters` div.
  *
  * Integration:
  *   - Hooks into Finsweet's `filter` lifecycle phase via `addHook('filter', ...)`
@@ -19,6 +14,7 @@
  *   - Awaits `loadingPaginatedItems` so ALL items are available before filtering
  *   - Awaits each item's `nesting` promise so nested content is ready
  *   - Cross-group faceted search: removes radios that would produce no results
+ *   - Disables dropdown when all its radios are hidden (no possible matches)
  */
 
 // ---------------------------------------------------------------------------
@@ -100,20 +96,10 @@ export function initCaseStudyFilters() {
 
   // Apply loading state immediately to filter controls
   const dropdownWrappers = document.querySelectorAll<HTMLElement>('.dropdown_wrapper');
-  const searchInput = document.querySelector<HTMLInputElement>('[data-search="name"]');
-
   dropdownWrappers.forEach((el) => el.classList.add('cs-filters-loading'));
-  if (searchInput) {
-    const searchWrapper = searchInput.closest('.form_field-wrapper') || searchInput.parentElement;
-    if (searchWrapper) (searchWrapper as HTMLElement).classList.add('cs-filters-loading');
-  }
 
   function removeLoadingState() {
     dropdownWrappers.forEach((el) => el.classList.remove('cs-filters-loading'));
-    if (searchInput) {
-      const searchWrapper = searchInput.closest('.form_field-wrapper') || searchInput.parentElement;
-      if (searchWrapper) (searchWrapper as HTMLElement).classList.remove('cs-filters-loading');
-    }
     loadingStyle.remove();
   }
 
@@ -138,35 +124,40 @@ export function initCaseStudyFilters() {
     });
   });
 
-  // ---- Dropdown toggle labels (show picked option in toggle) ----
-  const toggleDefaults = new Map<string, { el: HTMLElement; defaultText: string }>();
+  // ---- Dropdown references & toggle labels (show picked option in toggle) ----
+  const groupDropdowns = new Map<
+    string,
+    { wrapperEl: HTMLElement; toggleTextEl: HTMLElement; defaultText: string }
+  >();
 
   FILTER_GROUPS.forEach((group) => {
+    // Radios are still in the DOM at this point, so .closest() works
     const firstRadio = radios.find((r) => r.group === group);
     if (!firstRadio) return;
 
-    const dropdownWrapper = firstRadio.input.closest('.dropdown_wrapper');
-    if (!dropdownWrapper) return;
+    const wrapperEl = firstRadio.input.closest('.dropdown_wrapper') as HTMLElement | null;
+    if (!wrapperEl) return;
 
-    const toggleEl = dropdownWrapper.querySelector<HTMLElement>('.form_dropdown > div:first-child');
-    if (!toggleEl) return;
+    const toggleTextEl = wrapperEl.querySelector<HTMLElement>('.form_dropdown > div:first-child');
+    if (!toggleTextEl) return;
 
-    toggleDefaults.set(group, {
-      el: toggleEl,
-      defaultText: toggleEl.textContent?.trim() ?? '',
+    groupDropdowns.set(group, {
+      wrapperEl,
+      toggleTextEl,
+      defaultText: toggleTextEl.textContent?.trim() ?? '',
     });
   });
 
   function updateToggleLabel(group: string) {
-    const toggle = toggleDefaults.get(group);
-    if (!toggle) return;
+    const dropdown = groupDropdowns.get(group);
+    if (!dropdown) return;
 
     const activeLabel = activeFilters.get(group);
     if (activeLabel && activeLabel.size > 0) {
       const [first] = activeLabel;
-      toggle.el.textContent = first;
+      dropdown.toggleTextEl.textContent = first;
     } else {
-      toggle.el.textContent = toggle.defaultText;
+      dropdown.toggleTextEl.textContent = dropdown.defaultText;
     }
   }
 
@@ -174,18 +165,17 @@ export function initCaseStudyFilters() {
   const activeFilters: Map<string, Set<string>> = new Map(
     FILTER_GROUPS.map((g) => [g, new Set<string>()])
   );
-  let searchQuery = '';
 
   function hasActiveFilters(): boolean {
     for (const labels of activeFilters.values()) {
       if (labels.size > 0) return true;
     }
-    return searchQuery.length > 0;
+    return false;
   }
 
   // ---- Filter logic (operates on item DOM elements) ----
 
-  function passesCheckboxFilters(el: HTMLElement): boolean {
+  function passesRadioFilters(el: HTMLElement): boolean {
     for (const [group, labels] of activeFilters.entries()) {
       if (labels.size === 0) continue;
 
@@ -207,16 +197,6 @@ export function initCaseStudyFilters() {
     }
 
     return true;
-  }
-
-  function passesSearchFilter(el: HTMLElement): boolean {
-    if (!searchQuery) return true;
-
-    const nameEl = el.querySelector<HTMLElement>('[data-filter="name"]');
-    if (!nameEl) return false;
-
-    const text = nameEl.textContent?.trim().toLowerCase() ?? '';
-    return text.includes(searchQuery);
   }
 
   // ---- Hook into Finsweet Attributes v2 List API ----
@@ -292,8 +272,6 @@ export function initCaseStudyFilters() {
           const itemsPassingOtherGroups = allItems.filter((item) => {
             const el = item.element;
 
-            if (!passesSearchFilter(el)) return false;
-
             for (const [otherGroup, labels] of activeFilters.entries()) {
               if (otherGroup === group) continue;
               if (!passesGroupFilter(el, otherGroup, labels)) return false;
@@ -301,6 +279,9 @@ export function initCaseStudyFilters() {
 
             return true;
           });
+
+          // Track how many radios remain visible in this group
+          let visibleCount = 0;
 
           // For each radio in this group, check availability
           for (const r of groupRadios) {
@@ -315,6 +296,7 @@ export function initCaseStudyFilters() {
                   r.parentEl.appendChild(r.wrapperEl);
                 }
               }
+              visibleCount++;
               continue;
             }
 
@@ -331,10 +313,28 @@ export function initCaseStudyFilters() {
                   r.parentEl.appendChild(r.wrapperEl);
                 }
               }
+              visibleCount++;
             } else {
               if (r.wrapperEl.parentElement) {
                 r.wrapperEl.remove();
               }
+            }
+          }
+
+          // Disable the dropdown when no radios are visible in this group
+          const dropdown = groupDropdowns.get(group);
+          if (dropdown) {
+            if (visibleCount === 0) {
+              dropdown.wrapperEl.classList.add('is-disabled');
+
+              // Force-close the Webflow dropdown if it's currently open
+              const toggle = dropdown.wrapperEl.querySelector<HTMLElement>('.w-dropdown-toggle');
+              const list = dropdown.wrapperEl.querySelector<HTMLElement>('.w-dropdown-list');
+              toggle?.classList.remove('w--open');
+              toggle?.setAttribute('aria-expanded', 'false');
+              list?.classList.remove('w--open');
+            } else {
+              dropdown.wrapperEl.classList.remove('is-disabled');
             }
           }
         }
@@ -350,7 +350,7 @@ export function initCaseStudyFilters() {
 
         const filtered = items.filter((item) => {
           const el = item.element;
-          return passesCheckboxFilters(el) && passesSearchFilter(el);
+          return passesRadioFilters(el);
         });
 
         updateEmptyState(filtered.length, true);
@@ -387,33 +387,6 @@ export function initCaseStudyFilters() {
         });
       });
 
-      // ---- Dropdown wrappers (disabled while searching) ----
-
-      function updateDropdownState() {
-        dropdownWrappers.forEach((el) => {
-          if (searchQuery.length > 0) {
-            el.classList.add('is-disabled');
-          } else {
-            el.classList.remove('is-disabled');
-          }
-        });
-      }
-
-      // ---- Search handler ----
-      let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-      if (searchInput) {
-        searchInput.addEventListener('input', () => {
-          searchQuery = searchInput.value.trim().toLowerCase();
-          updateDropdownState();
-
-          if (debounceTimer) clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(() => {
-            listInstance.triggerHook('filter');
-          }, 300);
-        });
-      }
-
       // ---- Handle pre-checked radios ----
       let hasPresetFilters = false;
       radios.forEach((r) => {
@@ -426,11 +399,6 @@ export function initCaseStudyFilters() {
           }
         }
       });
-
-      if (searchInput && searchInput.value.trim()) {
-        searchQuery = searchInput.value.trim().toLowerCase();
-        hasPresetFilters = true;
-      }
 
       if (hasPresetFilters) {
         listInstance.triggerHook('filter');
