@@ -6,8 +6,8 @@
  *
  * Two filter groups:
  *
- * 1. Checkbox filters — grouped by `name` attribute (obszary, rozwiazania, branze).
- *    Each checkbox's `.checkbox_text` label matches text inside the corresponding
+ * 1. Radio filters — grouped by `name` attribute (obszary, rozwiazania, branze).
+ *    Each radio's `.checkbox_text` label matches text inside the corresponding
  *    `[fs-list-nest="<group>"]` nested list within each item's `.for-filters` div.
  *
  * 2. Search bar — `[data-search="name"]` input filters items by text content
@@ -18,14 +18,14 @@
  *   - Triggers re-filtering with `triggerHook('filter')` on user interaction
  *   - Awaits `loadingPaginatedItems` so ALL items are available before filtering
  *   - Awaits each item's `nesting` promise so nested content is ready
- *   - Cross-group faceted search: removes checkboxes that would produce no results
+ *   - Cross-group faceted search: removes radios that would produce no results
  */
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface CheckboxState {
+interface RadioState {
   group: string;
   label: string;
   input: HTMLInputElement;
@@ -120,12 +120,12 @@ export function initCaseStudyFilters() {
   // ---- Gather filter UI elements ----
   const FILTER_GROUPS = ['obszary', 'rozwiazania', 'branze'] as const;
 
-  // Build checkbox state
-  const checkboxes: CheckboxState[] = [];
+  // Build radio state
+  const radios: RadioState[] = [];
 
   FILTER_GROUPS.forEach((group) => {
     const inputs = document.querySelectorAll<HTMLInputElement>(
-      `input[type="checkbox"][name="${group}"]`
+      `input[type="radio"][name="${group}"]`
     );
     inputs.forEach((input) => {
       const wrapperEl = input.closest('[role="listitem"]') as HTMLElement | null;
@@ -134,9 +134,41 @@ export function initCaseStudyFilters() {
       const label = textEl?.textContent?.trim() ?? '';
       const parentEl = wrapperEl?.parentElement ?? null;
       const nextSiblingEl = wrapperEl?.nextSibling ?? null;
-      checkboxes.push({ group, label, input, textEl, wrapperEl, parentEl, nextSiblingEl });
+      radios.push({ group, label, input, textEl, wrapperEl, parentEl, nextSiblingEl });
     });
   });
+
+  // ---- Dropdown toggle labels (show picked option in toggle) ----
+  const toggleDefaults = new Map<string, { el: HTMLElement; defaultText: string }>();
+
+  FILTER_GROUPS.forEach((group) => {
+    const firstRadio = radios.find((r) => r.group === group);
+    if (!firstRadio) return;
+
+    const dropdownWrapper = firstRadio.input.closest('.dropdown_wrapper');
+    if (!dropdownWrapper) return;
+
+    const toggleEl = dropdownWrapper.querySelector<HTMLElement>('.form_dropdown > div:first-child');
+    if (!toggleEl) return;
+
+    toggleDefaults.set(group, {
+      el: toggleEl,
+      defaultText: toggleEl.textContent?.trim() ?? '',
+    });
+  });
+
+  function updateToggleLabel(group: string) {
+    const toggle = toggleDefaults.get(group);
+    if (!toggle) return;
+
+    const activeLabel = activeFilters.get(group);
+    if (activeLabel && activeLabel.size > 0) {
+      const [first] = activeLabel;
+      toggle.el.textContent = first;
+    } else {
+      toggle.el.textContent = toggle.defaultText;
+    }
+  }
 
   // ---- Active filter state ----
   const activeFilters: Map<string, Set<string>> = new Map(
@@ -231,7 +263,7 @@ export function initCaseStudyFilters() {
         emptyEl.style.display = filtersActive && resultCount === 0 ? 'flex' : 'none';
       }
 
-      // ---- Cross-group checkbox availability (faceted search) ----
+      // ---- Cross-group radio availability (faceted search) ----
       function getItemNestTexts(el: HTMLElement, group: string): string[] {
         const nestTarget = el.querySelector<HTMLElement>(
           `[fs-list-nest="${group}"][fs-list-element="nest-target"]`
@@ -250,11 +282,11 @@ export function initCaseStudyFilters() {
         );
       }
 
-      function updateCheckboxAvailability() {
+      function updateRadioAvailability() {
         const allItems = listInstance.items.value;
 
         for (const group of FILTER_GROUPS) {
-          const groupCheckboxes = checkboxes.filter((cb) => cb.group === group);
+          const groupRadios = radios.filter((r) => r.group === group);
 
           // Get items that pass all filters EXCEPT this group
           const itemsPassingOtherGroups = allItems.filter((item) => {
@@ -270,17 +302,17 @@ export function initCaseStudyFilters() {
             return true;
           });
 
-          // For each checkbox in this group, check availability
-          for (const cb of groupCheckboxes) {
-            if (!cb.wrapperEl || !cb.parentEl) continue;
+          // For each radio in this group, check availability
+          for (const r of groupRadios) {
+            if (!r.wrapperEl || !r.parentEl) continue;
 
-            if (cb.input.checked) {
+            if (r.input.checked) {
               // Already checked — always keep in DOM
-              if (!cb.wrapperEl.parentElement) {
-                if (cb.nextSiblingEl && cb.nextSiblingEl.parentElement === cb.parentEl) {
-                  cb.parentEl.insertBefore(cb.wrapperEl, cb.nextSiblingEl);
+              if (!r.wrapperEl.parentElement) {
+                if (r.nextSiblingEl && r.nextSiblingEl.parentElement === r.parentEl) {
+                  r.parentEl.insertBefore(r.wrapperEl, r.nextSiblingEl);
                 } else {
-                  cb.parentEl.appendChild(cb.wrapperEl);
+                  r.parentEl.appendChild(r.wrapperEl);
                 }
               }
               continue;
@@ -288,20 +320,20 @@ export function initCaseStudyFilters() {
 
             const hasMatchingItems = itemsPassingOtherGroups.some((item) => {
               const texts = getItemNestTexts(item.element, group);
-              return texts.some((text) => text === cb.label.toLowerCase());
+              return texts.some((text) => text === r.label.toLowerCase());
             });
 
             if (hasMatchingItems) {
-              if (!cb.wrapperEl.parentElement) {
-                if (cb.nextSiblingEl && cb.nextSiblingEl.parentElement === cb.parentEl) {
-                  cb.parentEl.insertBefore(cb.wrapperEl, cb.nextSiblingEl);
+              if (!r.wrapperEl.parentElement) {
+                if (r.nextSiblingEl && r.nextSiblingEl.parentElement === r.parentEl) {
+                  r.parentEl.insertBefore(r.wrapperEl, r.nextSiblingEl);
                 } else {
-                  cb.parentEl.appendChild(cb.wrapperEl);
+                  r.parentEl.appendChild(r.wrapperEl);
                 }
               }
             } else {
-              if (cb.wrapperEl.parentElement) {
-                cb.wrapperEl.remove();
+              if (r.wrapperEl.parentElement) {
+                r.wrapperEl.remove();
               }
             }
           }
@@ -312,7 +344,7 @@ export function initCaseStudyFilters() {
       listInstance.addHook('filter', (items: FsListItem[]) => {
         if (!hasActiveFilters()) {
           updateEmptyState(items.length, false);
-          updateCheckboxAvailability();
+          updateRadioAvailability();
           return items;
         }
 
@@ -322,24 +354,34 @@ export function initCaseStudyFilters() {
         });
 
         updateEmptyState(filtered.length, true);
-        updateCheckboxAvailability();
+        updateRadioAvailability();
 
         return filtered;
       });
 
-      // ---- Checkbox handlers ----
-      checkboxes.forEach((cb) => {
-        cb.input.addEventListener('change', () => {
-          const filterSet = activeFilters.get(cb.group);
+      // ---- Radio handlers ----
+      radios.forEach((r) => {
+        r.input.addEventListener('click', () => {
+          const filterSet = activeFilters.get(r.group);
           if (!filterSet) return;
 
-          if (cb.input.checked) {
-            filterSet.add(cb.label);
-            cb.textEl?.classList.add('is-active');
+          // Toggle off if clicking the already-selected radio
+          if (filterSet.has(r.label)) {
+            r.input.checked = false;
+            filterSet.clear();
+            r.textEl?.classList.remove('is-active');
           } else {
-            filterSet.delete(cb.label);
-            cb.textEl?.classList.remove('is-active');
+            // Clear previous selection in this group
+            filterSet.clear();
+            radios
+              .filter((other) => other.group === r.group && other !== r)
+              .forEach((other) => other.textEl?.classList.remove('is-active'));
+
+            filterSet.add(r.label);
+            r.textEl?.classList.add('is-active');
           }
+
+          updateToggleLabel(r.group);
 
           listInstance.triggerHook('filter');
         });
@@ -372,14 +414,14 @@ export function initCaseStudyFilters() {
         });
       }
 
-      // ---- Handle pre-checked checkboxes ----
+      // ---- Handle pre-checked radios ----
       let hasPresetFilters = false;
-      checkboxes.forEach((cb) => {
-        if (cb.input.checked) {
-          const filterSet = activeFilters.get(cb.group);
+      radios.forEach((r) => {
+        if (r.input.checked) {
+          const filterSet = activeFilters.get(r.group);
           if (filterSet) {
-            filterSet.add(cb.label);
-            cb.textEl?.classList.add('is-active');
+            filterSet.add(r.label);
+            r.textEl?.classList.add('is-active');
             hasPresetFilters = true;
           }
         }
