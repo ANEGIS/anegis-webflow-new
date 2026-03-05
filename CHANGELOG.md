@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.0.0
+
+### Major Changes
+
+- 603f792: lex added
+
 ## 4.0.4
 
 ### Patch Changes
