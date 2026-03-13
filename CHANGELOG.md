@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.0.2
+
+### Patch Changes
+
+- 98a319e: filters fix
+
 ## 5.0.1
 
 ### Patch Changes
