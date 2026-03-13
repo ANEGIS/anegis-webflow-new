@@ -22,7 +22,7 @@ import { initDockSliders } from './components/sliders/DockSlider';
 import { initMobileSliders } from './components/sliders/MobileSlider';
 import { initSwiperSlider } from './components/sliders/SwiperSlider';
 import { initMobileTabs } from './components/tabs/MobileTabs';
-import { initTabLists } from './components/tabs/TabsAutomatic';
+import { initTabLists, initTabsMenuLinks } from './components/tabs/TabsAutomatic';
 
 window.Webflow ||= [];
 window.Webflow.push(() => {
@@ -31,6 +31,7 @@ window.Webflow.push(() => {
 
   // Initialize all components
   initTabLists();
+  initTabsMenuLinks();
   initMobileTabs();
   initNavAccessibility();
   initSmartNav();

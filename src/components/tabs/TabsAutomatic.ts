@@ -4,6 +4,7 @@ export class TabsAutomatic {
   firstTab: HTMLElement | null = null;
   lastTab: HTMLElement | null = null;
   tabpanels: HTMLElement[] = [];
+  private pendingTimeouts: number[] = [];
 
   constructor(groupNode: HTMLElement) {
     this.tablistNode = groupNode;
@@ -46,32 +47,53 @@ export class TabsAutomatic {
       }
     }
 
-    // Set initial height for tabs content
-    this.setTabsContentHeight();
+    // Set initial height for tabs content (disabled)
+    // this.setTabsContentHeight();
   }
 
   /**
-   * Set the tabs content height to the tallest tab panel
+   * Set the tabs content min-height to the tallest tab panel
    */
   setTabsContentHeight() {
     const tabsComponent = this.tablistNode.closest('.tabs_component');
     if (!tabsComponent) return;
 
-    const contentContainer = tabsComponent.querySelector('.tabs_component-content');
+    const contentContainer = tabsComponent.querySelector('.tabs_component-content') as HTMLElement;
     if (!contentContainer) return;
 
     // Only run on desktop
     if (window.innerWidth <= 991) {
-      (contentContainer as HTMLElement).style.height = '';
+      contentContainer.style.minHeight = '';
       return;
     }
 
-    const panels = contentContainer.querySelectorAll('.tabs_component-content > *');
+    const panels = contentContainer.querySelectorAll(':scope > *');
     if (panels.length === 0) return;
 
-    const maxHeight = Math.max(...Array.from(panels).map((el) => (el as HTMLElement).offsetHeight));
+    // Measure all panels including hidden ones to find the tallest
+    let maxHeight = 0;
+    panels.forEach((panel) => {
+      const p = panel as HTMLElement;
+      const isHidden = p.hasAttribute('hidden');
 
-    (contentContainer as HTMLElement).style.height = maxHeight + 'px';
+      if (isHidden) {
+        p.style.visibility = 'hidden';
+        p.style.display = 'block';
+        p.style.position = 'absolute';
+        p.removeAttribute('hidden');
+      }
+
+      maxHeight = Math.max(maxHeight, p.offsetHeight);
+
+      if (isHidden) {
+        p.setAttribute('hidden', 'true');
+        p.style.display = '';
+        p.style.position = '';
+        p.style.visibility = '';
+      }
+    });
+
+    contentContainer.style.minHeight = maxHeight + 'px';
   }
 
   setInitialMobileTab(currentTab: HTMLElement) {
@@ -91,60 +113,30 @@ export class TabsAutomatic {
   }
 
   setSelectedTab(currentTab: HTMLElement, setFocus: boolean = true) {
+    // Cancel any pending transition timeouts from previous tab switches
+    this.pendingTimeouts.forEach((id) => clearTimeout(id));
+    this.pendingTimeouts = [];
+
     // Check if tabs are within .tabs_component wrapper
     const tabsComponent = this.tablistNode.closest('.tabs_component');
     const useTransition = tabsComponent !== null;
 
-    // First, handle outgoing tabs (fade out) if transitions are enabled
-    if (useTransition) {
-      this.tabs.forEach((tab) => {
-        const controls = tab.getAttribute('aria-controls');
-        const tabpanel = controls ? document.getElementById(controls) : null;
+    // Immediately deactivate all other tabs and panels
+    this.tabs.forEach((tab) => {
+      if (currentTab === tab) return;
 
-        if (currentTab !== tab && tabpanel && !tabpanel.hasAttribute('hidden')) {
-          // Fade out current panel
-          tabpanel.style.transition = 'opacity 0.2s ease-in-out';
-          tabpanel.style.opacity = '0';
+      const loopControls = tab.getAttribute('aria-controls');
+      const loopTabpanel = loopControls ? document.getElementById(loopControls) : null;
 
-          // After fade out, hide it and remove from tab order
-          setTimeout(() => {
-            tab.setAttribute('aria-selected', 'false');
-            tab.tabIndex = -1;
-            tab.classList.remove('is-active-tab');
-            tabpanel.classList.remove('is-active-tab');
-            tabpanel.setAttribute('hidden', 'true');
-            tabpanel.removeAttribute('style');
-          }, 200);
-        } else if (currentTab !== tab) {
-          // No transition needed, just update immediately
-          tab.setAttribute('aria-selected', 'false');
-          tab.tabIndex = -1;
-          tab.classList.remove('is-active-tab');
-          if (tabpanel) {
-            tabpanel.classList.remove('is-active-tab');
-            tabpanel.setAttribute('hidden', 'true');
-            tabpanel.removeAttribute('style');
-          }
-        }
-      });
-    } else {
-      // No transitions - instant switch
-      this.tabs.forEach((tab) => {
-        const controls = tab.getAttribute('aria-controls');
-        const tabpanel = controls ? document.getElementById(controls) : null;
-
-        if (currentTab !== tab) {
-          tab.setAttribute('aria-selected', 'false');
-          tab.tabIndex = -1;
-          tab.classList.remove('is-active-tab');
-          if (tabpanel) {
-            tabpanel.classList.remove('is-active-tab');
-            tabpanel.setAttribute('hidden', 'true');
-            tabpanel.removeAttribute('style');
-          }
-        }
-      });
-    }
+      tab.setAttribute('aria-selected', 'false');
+      tab.tabIndex = -1;
+      tab.classList.remove('is-active-tab');
+      if (loopTabpanel) {
+        loopTabpanel.classList.remove('is-active-tab');
+        loopTabpanel.setAttribute('hidden', 'true');
+        loopTabpanel.removeAttribute('style');
+      }
+    });
 
     // Handle incoming tab
     const controls = currentTab.getAttribute('aria-controls');
@@ -166,16 +158,18 @@ export class TabsAutomatic {
         // Trigger reflow to ensure transition works
         void tabpanel.offsetWidth;
 
-        setTimeout(() => {
-          tabpanel.style.opacity = '1';
-        }, 10);
+        this.pendingTimeouts.push(
+          window.setTimeout(() => {
+            tabpanel.style.opacity = '1';
+          }, 10)
+        );
 
         // Clean up inline styles after transition
-        setTimeout(() => {
-          tabpanel.removeAttribute('style');
-          // Update content height after transition completes
-          this.setTabsContentHeight();
-        }, 250);
+        this.pendingTimeouts.push(
+          window.setTimeout(() => {
+            tabpanel.removeAttribute('style');
+          }, 250)
+        );
       } else {
         tabpanel.removeAttribute('style');
       }
@@ -284,4 +278,46 @@ export function initTabLists() {
       new TabsAutomatic(tablist);
     }
   });
+}
+
+/**
+ * On tablet and below (≤991px), change .tabs_component-menu tab links
+ * to navigate to /branze/{data-w-tab value} instead of switching tabs.
+ * On desktop, restore the original Webflow hrefs.
+ */
+export function initTabsMenuLinks() {
+  const TABLET_BREAKPOINT = 991;
+  const menus = document.querySelectorAll('.tabs_component-menu');
+  if (menus.length === 0) return;
+
+  // Store original hrefs so we can restore them on desktop
+  const originalHrefs = new Map<HTMLAnchorElement, string>();
+
+  menus.forEach((menu) => {
+    const links = menu.querySelectorAll<HTMLAnchorElement>('a[data-w-tab]');
+    links.forEach((link) => {
+      originalHrefs.set(link, link.getAttribute('href') || '');
+    });
+  });
+
+  function updateHrefs() {
+    const isMobile = window.innerWidth <= TABLET_BREAKPOINT;
+
+    originalHrefs.forEach((originalHref, link) => {
+      if (isMobile) {
+        const tabValue = link.getAttribute('data-w-tab');
+        if (tabValue) {
+          link.setAttribute('href', `/branze/${tabValue}`);
+        }
+      } else {
+        link.setAttribute('href', originalHref);
+      }
+    });
+  }
+
+  // Run on init
+  updateHrefs();
+
+  // Re-run on resize
+  window.addEventListener('resize', updateHrefs);
 }
