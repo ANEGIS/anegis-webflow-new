@@ -12,6 +12,7 @@ import { initFaqCards } from './components/cards/FaqCards';
 import { initProductCards } from './components/cards/ProductCards';
 import { initAccessibleDropdown } from './components/dropdown/AccessibleDropdown';
 import { initCaseStudyFilters } from './components/filters/CaseStudyFilters';
+import { initSearchFilter } from './components/filters/SearchFilter';
 import { initNavAccessibility } from './components/layout/NavAccessibility';
 import { initSmartNav } from './components/layout/SmartNav';
 import { initLexicon } from './components/lexicon/Lexicon';
@@ -54,5 +55,6 @@ window.Webflow.push(() => {
   initChallengeList();
   initDecorAnimation();
   initCaseStudyFilters();
+  initSearchFilter();
   initLexicon();
 });

@@ -231,6 +231,11 @@ export function initCaseStudyFilters() {
         await Promise.all(nestingPromises);
       }
 
+      // Stable snapshot of ALL items — captured before any hooks run.
+      // Used by updateRadioAvailability so it always works against the full
+      // item set, regardless of which other hooks (e.g. search) run first.
+      const allLoadedItems = listInstance.items.value.slice();
+
       // ✅ Everything loaded — remove loading state
       removeLoadingState();
 
@@ -263,13 +268,24 @@ export function initCaseStudyFilters() {
       }
 
       function updateRadioAvailability() {
-        const allItems = listInstance.items.value;
-
         for (const group of FILTER_GROUPS) {
           const groupRadios = radios.filter((r) => r.group === group);
 
+          // If items on this page don't use fs-list-nest for this group,
+          // skip availability logic entirely — radios would all appear to have
+          // no matches, causing the dropdown to be incorrectly disabled.
+          const groupUsesNesting = allLoadedItems.some((item) =>
+            item.element.querySelector(
+              `[fs-list-nest="${group}"][fs-list-element="nest-target"]`
+            )
+          );
+          if (!groupUsesNesting) {
+            groupDropdowns.get(group)?.wrapperEl.classList.remove('is-disabled');
+            continue;
+          }
+
           // Get items that pass all filters EXCEPT this group
-          const itemsPassingOtherGroups = allItems.filter((item) => {
+          const itemsPassingOtherGroups = allLoadedItems.filter((item) => {
             const el = item.element;
 
             for (const [otherGroup, labels] of activeFilters.entries()) {

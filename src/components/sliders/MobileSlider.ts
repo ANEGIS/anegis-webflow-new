@@ -16,6 +16,10 @@
 
 interface SwiperInstance {
   destroy: (deleteInstance?: boolean, cleanStyles?: boolean) => void;
+  slides: HTMLElement[];
+  activeIndex: number;
+  realIndex?: number;
+  slideTo: (index: number) => void;
 }
 
 interface SwiperOptions {
@@ -26,17 +30,25 @@ interface SwiperOptions {
   freeMode?: boolean;
   watchOverflow?: boolean;
   breakpoints?: {
-    [width: number]: Omit<SwiperOptions, 'breakpoints'>;
+    [width: number]: Omit<SwiperOptions, 'breakpoints' | 'on'>;
   };
   navigation?: {
     nextEl: HTMLElement | null;
     prevEl: HTMLElement | null;
+  };
+  on?: {
+    init?: (this: SwiperInstance) => void;
+    slideChange?: (this: SwiperInstance) => void;
   };
 }
 
 declare class Swiper {
   constructor(element: HTMLElement, options: SwiperOptions);
   destroy: (deleteInstance?: boolean, cleanStyles?: boolean) => void;
+  slides: HTMLElement[];
+  activeIndex: number;
+  realIndex?: number;
+  slideTo: (index: number) => void;
 }
 
 // Store active slider instances and their original slide styles
@@ -51,6 +63,18 @@ const MOBILE_BREAKPOINT = 991;
  */
 function isMobile(): boolean {
   return window.innerWidth <= MOBILE_BREAKPOINT;
+}
+
+/**
+ * Update the progress bar width
+ */
+function updateProgress(instance: SwiperInstance, progressThumb: HTMLElement) {
+  const total = instance.slides.length;
+  const current =
+    (instance.realIndex !== undefined ? instance.realIndex : instance.activeIndex) + 1;
+  const percentage = (current / total) * 100;
+  progressThumb.style.width = percentage + '%';
+  progressThumb.style.transition = 'width 0.3s ease';
 }
 
 /**
@@ -78,6 +102,16 @@ function initSlider(element: HTMLElement): void {
   }
   if (!prevEl && parent) {
     prevEl = parent.querySelector('.swiper-arrow.is-prev') as HTMLElement | null;
+  }
+
+  // Progress elements (check inside element and in parent)
+  let progressTrack = element.querySelector('.swiper-progress-track') as HTMLElement | null;
+  let progressThumb = element.querySelector('.swiper-progress-thumb') as HTMLElement | null;
+  if (!progressTrack && parent) {
+    progressTrack = parent.querySelector('.swiper-progress-track') as HTMLElement | null;
+  }
+  if (!progressThumb && parent) {
+    progressThumb = parent.querySelector('.swiper-progress-thumb') as HTMLElement | null;
   }
 
   // Store original styles before modifying
@@ -141,10 +175,37 @@ function initSlider(element: HTMLElement): void {
       nextEl: nextEl,
       prevEl: prevEl,
     },
+    on: {
+      init: function (this: SwiperInstance) {
+        if (progressThumb) updateProgress(this, progressThumb);
+      },
+      slideChange: function (this: SwiperInstance) {
+        if (progressThumb) updateProgress(this, progressThumb);
+      },
+    },
   };
 
   const instance = new Swiper(element, options);
   activeSliders.set(element, instance);
+
+  // Click to scrub on progress bar
+  if (progressTrack) {
+    if (!progressTrack.hasAttribute('data-progress-listener')) {
+      progressTrack.addEventListener('click', function (e) {
+        const swiperInstance = activeSliders.get(element);
+        if (!swiperInstance) return;
+        const event = e as MouseEvent;
+        const rect = progressTrack.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const trackWidth = rect.width;
+        const clickRatio = clickX / trackWidth;
+        const totalSlides = swiperInstance.slides.length;
+        const targetIndex = Math.floor(clickRatio * totalSlides);
+        swiperInstance.slideTo(targetIndex);
+      });
+      progressTrack.setAttribute('data-progress-listener', 'true');
+    }
+  }
 }
 
 /**
