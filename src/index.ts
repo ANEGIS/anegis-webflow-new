@@ -6,6 +6,7 @@ import { initCMSFlow } from './animations/CMSFlow';
 import { initDecorAnimation } from './animations/DecorAnimation';
 import { initMarquee } from './animations/Marquee';
 import { initScrollLine } from './animations/ScrollLine';
+import { initSectionHeaderAnimation } from './animations/SectionHeaderAnimation';
 import { initSmoothScroll } from './animations/SmoothScroll';
 import { initAccessibleButtons } from './components/buttons/AccessibleButtons';
 import { initFaqCards } from './components/cards/FaqCards';
@@ -54,6 +55,7 @@ window.Webflow.push(() => {
   initCMSFlow();
   initChallengeList();
   initDecorAnimation();
+  initSectionHeaderAnimation();
   initCaseStudyFilters();
   initSearchFilter();
   initLexicon();
