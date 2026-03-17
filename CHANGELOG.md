@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.0.3
+
+### Patch Changes
+
+- 250c8cc: header animations
+
 ## 5.0.2
 
 ### Patch Changes
