@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.0.5
+
+### Patch Changes
+
+- 6c96cf7: marquee implement
+
 ## 5.0.4
 
 ### Patch Changes
