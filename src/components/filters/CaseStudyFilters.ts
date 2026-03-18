@@ -5,14 +5,13 @@
  * Finsweet Attributes v2 List API.
  *
  * Radio filters — grouped by `name` attribute (obszary, rozwiazania, branze).
- * Each radio's `.checkbox_text` label matches text inside the corresponding
- * `[fs-list-nest="<group>"]` nested list within each item's `.for-filters` div.
+ * Each radio's `.checkbox_text` carries a `fs-list-field="xxx"` attribute that
+ * names the field to match against inside each list item.
  *
  * Integration:
  *   - Hooks into Finsweet's `filter` lifecycle phase via `addHook('filter', ...)`
  *   - Triggers re-filtering with `triggerHook('filter')` on user interaction
  *   - Awaits `loadingPaginatedItems` so ALL items are available before filtering
- *   - Awaits each item's `nesting` promise so nested content is ready
  *   - Cross-group faceted search: removes radios that would produce no results
  *   - Disables dropdown when all its radios are hidden (no possible matches)
  */
@@ -24,6 +23,7 @@
 interface RadioState {
   group: string;
   label: string;
+  fieldName: string;
   input: HTMLInputElement;
   textEl: HTMLElement | null;
   wrapperEl: HTMLElement | null;
@@ -69,6 +69,22 @@ declare global {
 // ---------------------------------------------------------------------------
 
 export function initCaseStudyFilters() {
+  // Auto-discover all radio groups that have fs-list-field on their labels.
+  // This covers any page — no hardcoded group names needed.
+  const allRadioInputs = document.querySelectorAll<HTMLInputElement>('input[type="radio"][name]');
+  const FILTER_GROUPS = [
+    ...new Set(
+      Array.from(allRadioInputs)
+        .filter((input) => {
+          const label = input.closest('label') ?? input.parentElement;
+          return label?.querySelector('[fs-list-field]') !== null;
+        })
+        .map((input) => input.name)
+    ),
+  ];
+
+  if (FILTER_GROUPS.length === 0) return;
+
   // ---- Loading state: block interactions until Finsweet is ready ----
   const loadingStyle = document.createElement('style');
   loadingStyle.textContent = `
@@ -104,9 +120,8 @@ export function initCaseStudyFilters() {
   }
 
   // ---- Gather filter UI elements ----
-  const FILTER_GROUPS = ['obszary', 'rozwiazania', 'branze'] as const;
 
-  // Build radio state
+  // Build radio state — read fs-list-field from each radio's .checkbox_text
   const radios: RadioState[] = [];
 
   FILTER_GROUPS.forEach((group) => {
@@ -118,10 +133,18 @@ export function initCaseStudyFilters() {
       const textEl =
         (wrapperEl ?? input.parentElement)?.querySelector<HTMLElement>('.checkbox_text') ?? null;
       const label = textEl?.textContent?.trim() ?? '';
+      const fieldName = textEl?.getAttribute('fs-list-field') ?? '';
       const parentEl = wrapperEl?.parentElement ?? null;
       const nextSiblingEl = wrapperEl?.nextSibling ?? null;
-      radios.push({ group, label, input, textEl, wrapperEl, parentEl, nextSiblingEl });
+      radios.push({ group, label, fieldName, input, textEl, wrapperEl, parentEl, nextSiblingEl });
     });
+  });
+
+  // group → field name (from the first radio in the group)
+  const groupFieldNames = new Map<string, string>();
+  FILTER_GROUPS.forEach((group) => {
+    const first = radios.find((r) => r.group === group && r.fieldName !== '');
+    if (first) groupFieldNames.set(group, first.fieldName);
   });
 
   // ---- Dropdown references & toggle labels (show picked option in toggle) ----
@@ -131,7 +154,6 @@ export function initCaseStudyFilters() {
   >();
 
   FILTER_GROUPS.forEach((group) => {
-    // Radios are still in the DOM at this point, so .closest() works
     const firstRadio = radios.find((r) => r.group === group);
     if (!firstRadio) return;
 
@@ -173,24 +195,26 @@ export function initCaseStudyFilters() {
     return false;
   }
 
-  // ---- Filter logic (operates on item DOM elements) ----
+  // ---- Helpers: read field values from a list item element ----
+
+  function getItemFieldTexts(el: HTMLElement, fieldName: string): string[] {
+    return Array.from(el.querySelectorAll<HTMLElement>(`[fs-list-field="${fieldName}"]`)).map(
+      (node) => node.textContent?.trim().toLowerCase() ?? ''
+    );
+  }
+
+  // ---- Filter logic ----
 
   function passesRadioFilters(el: HTMLElement): boolean {
     for (const [group, labels] of activeFilters.entries()) {
       if (labels.size === 0) continue;
 
-      const nestTarget = el.querySelector<HTMLElement>(
-        `[fs-list-nest="${group}"][fs-list-element="nest-target"]`
-      );
+      const fieldName = groupFieldNames.get(group);
+      if (!fieldName) return false;
 
-      if (!nestTarget) return false;
-
-      const nestTexts = Array.from(
-        nestTarget.querySelectorAll<HTMLElement>('[role="listitem"] div')
-      ).map((div) => div.textContent?.trim().toLowerCase() ?? '');
-
+      const texts = getItemFieldTexts(el, fieldName);
       const hasMatch = Array.from(labels).some((label) =>
-        nestTexts.some((text) => text === label.toLowerCase())
+        texts.some((text) => text === label.toLowerCase())
       );
 
       if (!hasMatch) return false;
@@ -222,15 +246,6 @@ export function initCaseStudyFilters() {
         await listInstance.loadingPaginatedItems;
       }
 
-      // Wait for all nesting to complete
-      const nestingPromises = listInstance.items.value
-        .map((item) => item.nesting)
-        .filter((p): p is Promise<void> => !!p);
-
-      if (nestingPromises.length > 0) {
-        await Promise.all(nestingPromises);
-      }
-
       // Stable snapshot of ALL items — captured before any hooks run.
       // Used by updateRadioAvailability so it always works against the full
       // item set, regardless of which other hooks (e.g. search) run first.
@@ -249,19 +264,12 @@ export function initCaseStudyFilters() {
       }
 
       // ---- Cross-group radio availability (faceted search) ----
-      function getItemNestTexts(el: HTMLElement, group: string): string[] {
-        const nestTarget = el.querySelector<HTMLElement>(
-          `[fs-list-nest="${group}"][fs-list-element="nest-target"]`
-        );
-        if (!nestTarget) return [];
-        return Array.from(nestTarget.querySelectorAll<HTMLElement>('[role="listitem"] div')).map(
-          (div) => div.textContent?.trim().toLowerCase() ?? ''
-        );
-      }
 
       function passesGroupFilter(el: HTMLElement, group: string, labels: Set<string>): boolean {
         if (labels.size === 0) return true;
-        const texts = getItemNestTexts(el, group);
+        const fieldName = groupFieldNames.get(group);
+        if (!fieldName) return true;
+        const texts = getItemFieldTexts(el, fieldName);
         return Array.from(labels).some((label) =>
           texts.some((text) => text === label.toLowerCase())
         );
@@ -270,16 +278,14 @@ export function initCaseStudyFilters() {
       function updateRadioAvailability() {
         for (const group of FILTER_GROUPS) {
           const groupRadios = radios.filter((r) => r.group === group);
+          const fieldName = groupFieldNames.get(group);
 
-          // If items on this page don't use fs-list-nest for this group,
-          // skip availability logic entirely — radios would all appear to have
-          // no matches, causing the dropdown to be incorrectly disabled.
-          const groupUsesNesting = allLoadedItems.some((item) =>
-            item.element.querySelector(
-              `[fs-list-nest="${group}"][fs-list-element="nest-target"]`
-            )
-          );
-          if (!groupUsesNesting) {
+          // No field name means no fs-list-field on radios — skip and enable
+          const groupHasContent =
+            !!fieldName &&
+            allLoadedItems.some((item) => getItemFieldTexts(item.element, fieldName).length > 0);
+
+          if (!groupHasContent) {
             groupDropdowns.get(group)?.wrapperEl.classList.remove('is-disabled');
             continue;
           }
@@ -317,7 +323,7 @@ export function initCaseStudyFilters() {
             }
 
             const hasMatchingItems = itemsPassingOtherGroups.some((item) => {
-              const texts = getItemNestTexts(item.element, group);
+              const texts = getItemFieldTexts(item.element, r.fieldName);
               return texts.some((text) => text === r.label.toLowerCase());
             });
 
@@ -404,21 +410,22 @@ export function initCaseStudyFilters() {
       });
 
       // ---- Handle pre-checked radios ----
-      let hasPresetFilters = false;
       radios.forEach((r) => {
         if (r.input.checked) {
           const filterSet = activeFilters.get(r.group);
           if (filterSet) {
             filterSet.add(r.label);
             r.textEl?.classList.add('is-active');
-            hasPresetFilters = true;
           }
         }
       });
 
-      if (hasPresetFilters) {
-        listInstance.triggerHook('filter');
-      }
+      // Always trigger once to initialise radio availability — even when no
+      // pre-set filters exist. Finsweet's initial filter pipeline may have
+      // already run before our hook was registered (we register it after
+      // awaiting loadingPaginatedItems), so with single-page pagination and
+      // no pre-checked radios we can't rely on an automatic trigger.
+      listInstance.triggerHook('filter');
     },
   ]);
 }

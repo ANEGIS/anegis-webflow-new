@@ -19,6 +19,7 @@ import { initSmartNav } from './components/layout/SmartNav';
 import { initLexicon } from './components/lexicon/Lexicon';
 import { initMegaMenuAccordion } from './components/menu/MegaMenuAccordion';
 import { initMobileNavScroll } from './components/menu/MobileNavScroll';
+import { initFormModal } from './components/modal/FormModal';
 import { initProductsModal } from './components/modal/ProductsModal';
 import { initDockSliders } from './components/sliders/DockSlider';
 import { initMobileSliders } from './components/sliders/MobileSlider';
@@ -51,6 +52,7 @@ window.Webflow.push(() => {
   initAccessibleButtons();
   initMarquee();
   initBlobAnimation();
+  initFormModal();
   initProductsModal();
   initCMSFlow();
   initChallengeList();
