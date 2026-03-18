@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.0.6
+
+### Patch Changes
+
+- 2f45f35: scroll fix
+
 ## 5.0.5
 
 ### Patch Changes
