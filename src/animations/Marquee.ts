@@ -119,3 +119,66 @@ export const initMarquee = (options: { pauseOnHover: boolean } = { pauseOnHover:
     });
   }
 };
+
+/**
+ * RAF-based infinite marquee for .marquee / .marquee-wrapper / .marquee-item structure.
+ * Clones items to fill the viewport and animates them via requestAnimationFrame.
+ * Runs only when a .marquee element is present on the page.
+ */
+export const initMarqueeScroll = () => {
+  const marquee = document.querySelector('.marquee');
+  if (!marquee) return;
+
+  const track = marquee.querySelector('.marquee-wrapper') as HTMLElement | null;
+  if (!track) return;
+
+  const container = track.parentElement as HTMLElement;
+
+  Object.assign(track.style, {
+    display: 'flex',
+    flexWrap: 'nowrap',
+    willChange: 'transform',
+  });
+
+  const items = Array.from(track.querySelectorAll<HTMLElement>('.marquee-item'));
+  if (items.length === 0) return;
+
+  const fillWidth = container.offsetWidth * 2;
+  let totalCloneWidth = 0;
+
+  const originalSetWidth = items.reduce((acc, item) => {
+    const style = window.getComputedStyle(item);
+    const marginLeft = parseFloat(style.marginLeft) || 0;
+    const marginRight = parseFloat(style.marginRight) || 0;
+    return acc + item.offsetWidth + marginLeft + marginRight;
+  }, 0);
+
+  while (totalCloneWidth < fillWidth + originalSetWidth) {
+    items.forEach((item) => {
+      const clone = item.cloneNode(true) as HTMLElement;
+      clone.setAttribute('aria-hidden', 'true');
+      track.appendChild(clone);
+      totalCloneWidth += item.offsetWidth;
+    });
+  }
+
+  let x = 0;
+  const speed = 40; // pixels per second — stable at any refresh rate
+
+  let lastTime: number | null = null;
+
+  const tick = (timestamp: number) => {
+    if (lastTime !== null) {
+      const delta = (timestamp - lastTime) / 1000; // seconds elapsed since last frame
+      x -= speed * delta;
+      if (Math.abs(x) >= originalSetWidth) {
+        x += originalSetWidth;
+      }
+      track.style.transform = `translateX(${x}px)`;
+    }
+    lastTime = timestamp;
+    requestAnimationFrame(tick);
+  };
+
+  requestAnimationFrame(tick);
+};

@@ -4,7 +4,7 @@ import { greetUser } from '$utils/greet';
 import { initBlobAnimation } from './animations/BlobAnimation';
 import { initCMSFlow } from './animations/CMSFlow';
 import { initDecorAnimation } from './animations/DecorAnimation';
-import { initMarquee } from './animations/Marquee';
+import { initMarquee, initMarqueeScroll } from './animations/Marquee';
 import { initScrollLine } from './animations/ScrollLine';
 import { initSectionHeaderAnimation } from './animations/SectionHeaderAnimation';
 import { initSmoothScroll } from './animations/SmoothScroll';
@@ -51,6 +51,7 @@ window.Webflow.push(() => {
   initAccessibleDropdown();
   initAccessibleButtons();
   initMarquee();
+  initMarqueeScroll();
   initBlobAnimation();
   initFormModal();
   initProductsModal();

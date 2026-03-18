@@ -24,6 +24,10 @@ declare class Lenis {
   destroy: () => void;
   stop: () => void;
   start: () => void;
+  scrollTo: (
+    target: string | number | HTMLElement,
+    options?: { offset?: number; duration?: number; immediate?: boolean }
+  ) => void;
 }
 
 // Desktop breakpoint
@@ -61,6 +65,19 @@ export function initSmoothScroll(): void {
     touchMultiplier: 2,
     infinite: false,
     autoRaf: false,
+  });
+
+  // Make native anchor links (<a href="#id">) work with Lenis smooth scroll.
+  // Without this, Lenis hijacks the scroll mechanism and anchor jumps are suppressed.
+  document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((anchor) => {
+    anchor.addEventListener('click', (e: MouseEvent) => {
+      const href = anchor.getAttribute('href');
+      if (!href || href === '#') return;
+      const target = document.querySelector(href);
+      if (!target || !lenisInstance) return;
+      e.preventDefault();
+      lenisInstance.scrollTo(target as HTMLElement, { offset: 0 });
+    });
   });
 
   function raf(time: number): void {
