@@ -43,8 +43,7 @@ const FOCUSABLE_SELECTORS =
 
 const getFocusableElements = (container: HTMLElement): HTMLElement[] =>
   Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)).filter(
-    (el) =>
-      getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden'
+    (el) => el.offsetWidth > 0 || el.offsetHeight > 0
   );
 
 export function initProductsModal() {
@@ -75,26 +74,25 @@ export function initProductsModal() {
   const trapFocus = (e: KeyboardEvent) => {
     if (e.key !== 'Tab') return;
     const focusable = getFocusableElements(modal);
+    e.preventDefault(); // Always prevent default to stop browser scroll on Tab
+
     if (!focusable.length) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+
+    const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
+
     if (e.shiftKey) {
-      if (document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      }
+      const prev = currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1;
+      focusable[prev].focus({ preventScroll: true });
     } else {
-      if (document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
+      const next = currentIndex >= focusable.length - 1 ? 0 : currentIndex + 1;
+      focusable[next].focus({ preventScroll: true });
     }
   };
 
   const focusModal = () => {
     const focusable = getFocusableElements(modal);
-    if (focusable.length) focusable[0].focus();
-    else modal.focus();
+    if (focusable.length) focusable[0].focus({ preventScroll: true });
+    else modal.focus({ preventScroll: true });
   };
 
   // Function to open modal
@@ -175,13 +173,13 @@ export function initProductsModal() {
         onComplete: focusModal,
       });
 
-      modal.addEventListener('keydown', trapFocus);
+      document.addEventListener('keydown', trapFocus);
     }
   };
 
   // Function to close modal
   const closeModal = () => {
-    modal.removeEventListener('keydown', trapFocus);
+    document.removeEventListener('keydown', trapFocus);
 
     // Animate content out?
     // Just fade out modal wrapper is usually enough and cleaner

@@ -128,18 +128,33 @@ export function initSwiperSlider() {
 
     const swiperInstance = new Swiper(element, options);
 
-    // Click to scrub on progress bar
+    // Click and drag to scrub on progress bar
     if (progressTrack) {
-      progressTrack.addEventListener('click', function (e) {
-        const event = e as MouseEvent;
-        const rect = progressTrack.getBoundingClientRect();
-        const clickX = event.clientX - rect.left;
-        const trackWidth = rect.width;
-        const clickRatio = clickX / trackWidth;
-        const totalSlides = swiperInstance.slides.length;
-        const targetIndex = Math.floor(clickRatio * totalSlides);
-        swiperInstance.slideTo(targetIndex);
+      // Create an invisible hit area overlay — keeps the visual bar untouched
+      const hitArea = document.createElement('div');
+      Object.assign(hitArea.style, {
+        position: 'absolute',
+        inset: '-12px 0',
+        cursor: 'pointer',
+        zIndex: '1',
       });
+      progressTrack.style.position = 'relative';
+      progressTrack.appendChild(hitArea);
+
+      const scrubTo = (clientX: number) => {
+        const rect = progressTrack.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        const totalSlides = swiperInstance.slides.length;
+        swiperInstance.slideTo(Math.min(Math.floor(ratio * totalSlides), totalSlides - 1));
+      };
+
+      let isDragging = false;
+      hitArea.addEventListener('mousedown', (e) => { isDragging = true; scrubTo(e.clientX); });
+      document.addEventListener('mousemove', (e) => { if (isDragging) scrubTo(e.clientX); });
+      document.addEventListener('mouseup', () => { isDragging = false; });
+
+      hitArea.addEventListener('touchstart', (e) => { scrubTo(e.touches[0].clientX); }, { passive: true });
+      hitArea.addEventListener('touchmove', (e) => { scrubTo(e.touches[0].clientX); }, { passive: true });
     }
   });
 }

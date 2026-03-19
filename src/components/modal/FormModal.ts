@@ -3,15 +3,33 @@ const FOCUSABLE_SELECTORS =
 
 const getFocusableElements = (container: HTMLElement): HTMLElement[] =>
   Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)).filter(
-    (el) =>
-      getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden'
+    (el) => el.offsetWidth > 0 || el.offsetHeight > 0
   );
 
 export function initFormModal() {
   let lastFocused: HTMLElement | null = null;
-  let trapFocusHandler: ((e: KeyboardEvent) => void) | null = null;
 
   const getModal = () => document.querySelector<HTMLElement>('[data-form-modal]');
+
+  const trapFocus = (e: KeyboardEvent) => {
+    if (e.key !== 'Tab') return;
+    const modal = getModal();
+    if (!modal) return;
+    const focusable = getFocusableElements(modal);
+    e.preventDefault(); // Always prevent default to stop browser scroll on Tab
+
+    if (!focusable.length) return;
+
+    const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
+
+    if (e.shiftKey) {
+      const prev = currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1;
+      focusable[prev].focus({ preventScroll: true });
+    } else {
+      const next = currentIndex >= focusable.length - 1 ? 0 : currentIndex + 1;
+      focusable[next].focus({ preventScroll: true });
+    }
+  };
 
   const openModal = () => {
     const modal = getModal();
@@ -23,33 +41,14 @@ export function initFormModal() {
     // Focus first focusable element once modal is visible
     requestAnimationFrame(() => {
       const focusable = getFocusableElements(modal);
-      if (focusable.length) focusable[0].focus();
+      if (focusable.length) focusable[0].focus({ preventScroll: true });
       else {
         modal.setAttribute('tabindex', '-1');
-        modal.focus();
+        modal.focus({ preventScroll: true });
       }
     });
 
-    trapFocusHandler = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-      const focusable = getFocusableElements(modal);
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-
-    modal.addEventListener('keydown', trapFocusHandler);
+    document.addEventListener('keydown', trapFocus);
   };
 
   const closeModal = () => {
@@ -58,10 +57,7 @@ export function initFormModal() {
 
     modal.classList.remove('is-active');
 
-    if (trapFocusHandler) {
-      modal.removeEventListener('keydown', trapFocusHandler);
-      trapFocusHandler = null;
-    }
+    document.removeEventListener('keydown', trapFocus);
 
     lastFocused?.focus();
     lastFocused = null;
