@@ -1,6 +1,6 @@
 interface GSAP {
-  set(target: string | Element | NodeList | Element[], vars: Record<string, unknown>): void;
-
+  set(target: Element, vars: Record<string, unknown>): void;
+  to(target: Element, vars: Record<string, unknown>): void;
   ticker: {
     add(callback: () => void): void;
   };
@@ -8,45 +8,136 @@ interface GSAP {
 
 declare const gsap: GSAP;
 
+// ===== DOM INJECTION =====
+function createCursorElements(): {
+  cursorEl: HTMLElement;
+  trailSvg: SVGSVGElement;
+  trailPath: SVGPathElement;
+  gradient: SVGLinearGradientElement;
+} {
+  // Inject styles
+  const style = document.createElement('style');
+  style.textContent = `
+    #cursor-trail-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9998;
+      overflow: visible;
+    }
+    #cursor-hijack {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0;
+      will-change: transform, opacity;
+    }
+    .cursor-active #cursor-hijack,
+    .cursor-active #cursor-trail-canvas {
+      opacity: 1;
+    }
+    body:not(.cursor-active) #cursor-trail-canvas {
+      opacity: 0;
+    }
+    .cursor-paused #cursor-hijack,
+    .cursor-paused #cursor-trail-canvas {
+      opacity: 0 !important;
+    }
+    .cursor-paused {
+      cursor: pointer !important;
+    }
+    .cursor-paused * {
+      cursor: pointer !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Trail SVG
+  const ns = 'http://www.w3.org/2000/svg';
+  const trailSvg = document.createElementNS(ns, 'svg') as SVGSVGElement;
+  trailSvg.id = 'cursor-trail-canvas';
+  trailSvg.setAttribute('aria-hidden', 'true');
+
+  const defs = document.createElementNS(ns, 'defs');
+  const gradient = document.createElementNS(ns, 'linearGradient') as SVGLinearGradientElement;
+  gradient.id = 'trailGradient';
+  gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
+
+  const stops: [string, string, string][] = [
+    ['0%', '#b8c8dc', '0.0'],
+    ['50%', '#7a9ac4', '0.25'],
+    ['100%', '#11397B', '0.55'],
+  ];
+  stops.forEach(([offset, color, opacity]) => {
+    const stop = document.createElementNS(ns, 'stop');
+    stop.setAttribute('offset', offset);
+    stop.setAttribute('stop-color', color);
+    stop.setAttribute('stop-opacity', opacity);
+    gradient.appendChild(stop);
+  });
+  defs.appendChild(gradient);
+  trailSvg.appendChild(defs);
+
+  const trailPath = document.createElementNS(ns, 'path') as SVGPathElement;
+  trailPath.id = 'cursor-trail-path';
+  trailPath.setAttribute('d', '');
+  trailPath.setAttribute('fill', 'none');
+  trailPath.setAttribute('stroke', 'url(#trailGradient)');
+  trailPath.setAttribute('stroke-width', '2');
+  trailPath.setAttribute('stroke-linecap', 'round');
+  trailPath.setAttribute('stroke-linejoin', 'round');
+  trailPath.setAttribute('stroke-dasharray', '10 9');
+  trailSvg.appendChild(trailPath);
+
+  // Cursor arrow
+  const cursorEl = document.createElement('div');
+  cursorEl.id = 'cursor-hijack';
+  cursorEl.setAttribute('aria-hidden', 'true');
+  cursorEl.innerHTML = `
+    <svg width="32" height="28" viewBox="0 0 32 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 14L32 0L26 14L32 28L0 14Z" fill="url(#cursor_gradient)" />
+      <defs>
+        <linearGradient id="cursor_gradient" x1="32" y1="14" x2="0" y2="14" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#4AAAAB" />
+          <stop offset="1" stop-color="#11397B" />
+        </linearGradient>
+      </defs>
+    </svg>
+  `;
+
+  document.body.appendChild(trailSvg);
+  document.body.appendChild(cursorEl);
+
+  return { cursorEl, trailSvg, trailPath, gradient };
+}
+
 export function initCustomCursor() {
-  // Only run on desktop with hover capability
   const isDesktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   if (!isDesktop) return;
 
   const targets = document.querySelectorAll('[data-cursor]');
-  const cursorEl = document.getElementById('cursor-hijack');
-  const trailSvg = document.getElementById('cursor-trail-canvas');
-  const trailPath = document.getElementById('cursor-trail-path');
-  const gradient = document.getElementById('trailGradient');
+  if (!targets.length) return;
 
-  if (!cursorEl || !trailSvg || !trailPath || !targets.length) return;
   if (typeof gsap === 'undefined') {
     console.warn('GSAP not found');
     return;
   }
 
-  // Reduce trail visibility to be subtle (5-10%)
-  gsap.set(trailPath, { opacity: 0.08 });
+  const { cursorEl, trailSvg, trailPath, gradient } = createCursorElements();
 
-  // ===== CONFIGURATION =====
+  // ===== CONFIG =====
   const CONFIG = {
-    // Cursor tip position within the 32x28 SVG box (the pointy left tip)
     tipOffset: { x: 0, y: 14 },
-
-    // Trail offset from cursor tip (moves trail attachment behind the arrow)
-    trailOffset: 32, // Distance behind the cursor tip where trail starts
-
-    // Smoothing for cursor position (0-1, higher = snappier)
-    positionLerp: 0.25,
-
-    // Trail settings
-    maxPoints: 50, // Number of points in the trail
-    minDistance: 4, // Minimum distance to add a new point
-    trailDecay: 0.92, // How fast old points catch up (creates curve)
-
-    // Rotation
-    rotationLerp: 0.15, // Smoothness of rotation
-    idleSpeedThreshold: 0.5, // Below this, don't update rotation
+    trailOffset: 28,
+    positionLerp: 0.22,
+    maxPoints: 20,
+    trailDecay: 0.70,
+    rotationLerp: 0.12,
+    idleSpeedThreshold: 0.4,
   };
 
   // ===== STATE =====
@@ -57,47 +148,38 @@ export function initCustomCursor() {
   let targetAngle = 0;
   let currentAngle = 0;
 
-  // ===== SETUP =====
+  // ===== VIEWBOX =====
   function syncViewBox() {
-    if (trailSvg)
-      trailSvg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+    trailSvg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
   }
   syncViewBox();
   window.addEventListener('resize', syncViewBox);
 
-  // Track mouse position
-  window.addEventListener(
-    'mousemove',
-    (e) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    },
-    { passive: true }
-  );
+  // ===== MOUSE TRACKING =====
+  window.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  }, { passive: true });
 
   // ===== ACTIVATION =====
   function enter() {
-    active = true;
-    document.body.classList.add('cursor-active');
-
-    // Initialize positions
     cursor.x = mouse.x;
     cursor.y = mouse.y;
-
-    // Initialize trail with current position
-    trail = [];
-    for (let i = 0; i < CONFIG.maxPoints; i++) {
-      trail.push({ x: mouse.x, y: mouse.y });
-    }
-
-    // Set initial angle based on cursor position
+    trail = Array.from({ length: CONFIG.maxPoints }, () => ({ x: mouse.x, y: mouse.y }));
     currentAngle = 0;
     targetAngle = 0;
+
+    active = true;
+    document.body.classList.add('cursor-active');
+    gsap.to(cursorEl, { opacity: 1, duration: 0.3, ease: 'power2.out' });
+    gsap.to(trailSvg, { opacity: 1, duration: 0.4, ease: 'power2.out' });
   }
 
   function leave() {
     active = false;
     document.body.classList.remove('cursor-active');
+    gsap.to(cursorEl, { opacity: 0, duration: 0.25, ease: 'power2.in' });
+    gsap.to(trailSvg, { opacity: 0, duration: 0.35, ease: 'power2.in' });
   }
 
   targets.forEach((el) => {
@@ -105,13 +187,14 @@ export function initCustomCursor() {
     el.addEventListener('mouseleave', leave);
   });
 
-  // Hide cursor when hovering over .button-wrapper
-  document.querySelectorAll('.button-wrapper').forEach((el) => {
+  document.querySelectorAll('.button-group').forEach((el) => {
     el.addEventListener('mouseenter', () => {
-      document.body.classList.add('cursor-hidden');
+      active = false;
+      document.body.classList.add('cursor-paused');
     });
     el.addEventListener('mouseleave', () => {
-      document.body.classList.remove('cursor-hidden');
+      active = true;
+      document.body.classList.remove('cursor-paused');
     });
   });
 
@@ -119,11 +202,9 @@ export function initCustomCursor() {
   gsap.ticker.add(() => {
     if (!active) return;
 
-    // Smooth cursor position
     cursor.x += (mouse.x - cursor.x) * CONFIG.positionLerp;
     cursor.y += (mouse.y - cursor.y) * CONFIG.positionLerp;
 
-    // Calculate cursor rotation from movement direction
     const dx = cursor.x - trail[1].x;
     const dy = cursor.y - trail[1].y;
     const speed = Math.hypot(dx, dy);
@@ -132,79 +213,57 @@ export function initCustomCursor() {
       targetAngle = Math.atan2(dy, dx) * (180 / Math.PI);
     }
 
-    // Smooth angle transition (handle 360° wrap)
     let angleDiff = targetAngle - currentAngle;
     if (angleDiff > 180) angleDiff -= 360;
     if (angleDiff < -180) angleDiff += 360;
     currentAngle += angleDiff * CONFIG.rotationLerp;
 
-    // Calculate trail start position (behind the cursor, based on rotation)
     const angleRad = (currentAngle * Math.PI) / 180;
-    const trailStartX = cursor.x - Math.cos(angleRad) * CONFIG.trailOffset;
-    const trailStartY = cursor.y - Math.sin(angleRad) * CONFIG.trailOffset;
-
-    // Update trail - each point chases the one in front of it
-    // This creates the natural curved "snake" effect
-    trail[0].x = trailStartX;
-    trail[0].y = trailStartY;
+    trail[0].x = cursor.x - Math.cos(angleRad) * CONFIG.trailOffset;
+    trail[0].y = cursor.y - Math.sin(angleRad) * CONFIG.trailOffset;
 
     for (let i = 1; i < trail.length; i++) {
       trail[i].x += (trail[i - 1].x - trail[i].x) * (1 - CONFIG.trailDecay);
       trail[i].y += (trail[i - 1].y - trail[i].y) * (1 - CONFIG.trailDecay);
     }
 
-    // Draw the trail path
-    const pathData = generateCatmullRomPath(trail);
-    if (trailPath) trailPath.setAttribute('d', pathData);
-
-    // Update gradient to follow the path
+    trailPath.setAttribute('d', buildCatmullRom(trail));
     updateGradient();
 
-    // Position cursor
     gsap.set(cursorEl, {
       x: cursor.x - CONFIG.tipOffset.x,
       y: cursor.y - CONFIG.tipOffset.y,
-      rotation: currentAngle + 180, // Arrow points opposite to movement
+      rotation: currentAngle + 180,
       transformOrigin: `${CONFIG.tipOffset.x}px ${CONFIG.tipOffset.y}px`,
     });
   });
 
-  // ===== GRADIENT UPDATE =====
+  // ===== GRADIENT =====
   function updateGradient() {
-    if (!gradient || trail.length < 2) return;
-
-    // Gradient goes from tail (faded) to head (solid)
+    if (trail.length < 2) return;
     const tail = trail[trail.length - 1];
     const head = trail[0];
-
     gradient.setAttribute('x1', String(tail.x));
     gradient.setAttribute('y1', String(tail.y));
     gradient.setAttribute('x2', String(head.x));
     gradient.setAttribute('y2', String(head.y));
   }
 
-  // ===== PATH GENERATION =====
-  // Catmull-Rom spline for smooth curves through all points
-  function generateCatmullRomPath(points: { x: number; y: number }[], tension: number = 0.5) {
+  // ===== CATMULL-ROM PATH =====
+  function buildCatmullRom(points: { x: number; y: number }[], tension = 0.5): string {
     if (points.length < 2) return '';
-
-    let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
-
+    let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
     for (let i = 0; i < points.length - 1; i++) {
       const p0 = points[Math.max(i - 1, 0)];
       const p1 = points[i];
       const p2 = points[i + 1];
       const p3 = points[Math.min(i + 2, points.length - 1)];
-
-      // Calculate control points
       const cp1x = p1.x + ((p2.x - p0.x) / 6) * tension;
       const cp1y = p1.y + ((p2.y - p0.y) / 6) * tension;
       const cp2x = p2.x - ((p3.x - p1.x) / 6) * tension;
       const cp2y = p2.y - ((p3.y - p1.y) / 6) * tension;
-
-      path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+      d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
     }
-
-    return path;
+    return d;
   }
 }

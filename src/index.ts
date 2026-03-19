@@ -9,6 +9,7 @@ import { initScrollLine } from './animations/ScrollLine';
 import { initSectionHeaderAnimation } from './animations/SectionHeaderAnimation';
 import { initSmoothScroll } from './animations/SmoothScroll';
 import { initAccessibleButtons } from './components/buttons/AccessibleButtons';
+import { initCustomCursor } from './components/cursor/CustomCursor';
 import { initFaqCards } from './components/cards/FaqCards';
 import { initProductCards } from './components/cards/ProductCards';
 import { initAccessibleDropdown } from './components/dropdown/AccessibleDropdown';
@@ -48,7 +49,7 @@ window.Webflow.push(() => {
   initSwiperSlider();
   initMobileSliders();
   initDockSliders();
-  // initCustomCursor();
+  initCustomCursor();
   initScrollLine();
   initAccessibleDropdown();
   initAccessibleButtons();
