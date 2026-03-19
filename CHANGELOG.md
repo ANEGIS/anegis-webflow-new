@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.0.8
+
+### Patch Changes
+
+- ed9a1f2: focus and swiper
+
 ## 5.0.7
 
 ### Patch Changes
