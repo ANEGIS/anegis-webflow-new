@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.1.2
+
+### Patch Changes
+
+- c5a2b58: cursor animation
+
 ## 5.1.1
 
 ### Patch Changes
