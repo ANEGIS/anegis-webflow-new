@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.1.0
+
+### Minor Changes
+
+- 8845b31: tabs and products fix
+
 ## 5.0.8
 
 ### Patch Changes
