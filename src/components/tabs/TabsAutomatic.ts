@@ -176,7 +176,7 @@ export class TabsAutomatic {
     }
 
     if (setFocus) {
-      currentTab.focus();
+      currentTab.focus({ preventScroll: true });
     }
   }
 

@@ -70,7 +70,7 @@ export function initSmoothScroll(): void {
   // Make native anchor links work with Lenis smooth scroll.
   // Webflow nav links use full URLs (https://domain/#section), NOT just #section,
   // so we must match on href*="#" and compare the pathname too.
-  document.querySelectorAll<HTMLAnchorElement>('a[href*="#"]').forEach((anchor) => {
+  document.querySelectorAll<HTMLAnchorElement>('a[href*="#"]:not(.w-tab-link)').forEach((anchor) => {
     anchor.addEventListener('click', (e: MouseEvent) => {
       const href = anchor.getAttribute('href');
       if (!href) return;

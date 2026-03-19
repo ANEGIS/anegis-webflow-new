@@ -96,26 +96,23 @@ class MobileTabs {
     // Hide the original content container
     this.content.style.display = 'none';
 
-    // For each tab pair, insert the pane right after the pill
+    // For each tab pair, move the pane right after the pill
     this.tabPairs.forEach(({ pill, pane }, index) => {
       // Create a wrapper div to hold the pane in mobile layout
       const wrapper = document.createElement('div');
       wrapper.className = WRAPPER_CLASS;
-      wrapper.appendChild(pane.cloneNode(true) as HTMLElement);
-
-      // Get the cloned pane
-      const clonedPane = wrapper.firstElementChild as HTMLElement;
+      wrapper.appendChild(pane); // move actual element, not a clone
 
       // Behavior update: Only keep the LAST one opened and disable switching
       const isLast = index === this.tabPairs.length - 1;
 
       if (isLast) {
-        clonedPane.removeAttribute('hidden');
-        clonedPane.style.display = '';
+        pane.removeAttribute('hidden');
+        pane.style.display = '';
         wrapper.classList.add('is-open');
       } else {
-        clonedPane.setAttribute('hidden', 'true');
-        clonedPane.style.display = 'none';
+        pane.setAttribute('hidden', 'true');
+        pane.style.display = 'none';
         wrapper.classList.remove('is-open');
       }
 
@@ -128,6 +125,7 @@ class MobileTabs {
       pill.addEventListener('click', this.preventWebflowClick, { capture: true });
     });
   }
+
 
   private preventWebflowClick = (e: Event): void => {
     // Stop other listeners (Webflow's tab script) from seeing this click
@@ -167,15 +165,19 @@ class MobileTabs {
     this.isMobileLayout = false;
     this.container.classList.remove(MOBILE_CLASS);
 
-    // Remove click listeners and reset styles
-    this.tabPairs.forEach(({ pill }) => {
+    // Remove click listeners, reset styles, and move panes back to content container
+    this.tabPairs.forEach(({ pill, pane }) => {
       pill.removeEventListener('click', this.handleMobileTabClick);
       pill.removeEventListener('click', this.preventWebflowClick, { capture: true });
-      // Reset pointer events if they were ever set
       pill.style.pointerEvents = '';
+
+      // Move the actual pane back — Webflow will re-manage visibility
+      pane.removeAttribute('hidden');
+      pane.style.display = '';
+      this.content!.appendChild(pane);
     });
 
-    // Remove all mobile wrappers
+    // Remove now-empty mobile wrappers
     const wrappers = this.menu.querySelectorAll(`.${WRAPPER_CLASS}`);
     wrappers.forEach((wrapper) => wrapper.remove());
 
