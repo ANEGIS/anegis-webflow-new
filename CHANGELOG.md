@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.1.1
+
+### Patch Changes
+
+- ef2ff8a: product modal fix mobile
+
 ## 5.1.0
 
 ### Minor Changes
