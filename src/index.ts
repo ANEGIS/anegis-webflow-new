@@ -42,6 +42,8 @@ window.Webflow.push(() => {
   initMobileNavScroll();
   initFaqCards();
   initProductCards();
+  initFormModal();
+  initProductsModal();
 
   initSwiperSlider();
   initMobileSliders();
@@ -53,8 +55,6 @@ window.Webflow.push(() => {
   initMarquee();
   initMarqueeScroll();
   initBlobAnimation();
-  initFormModal();
-  initProductsModal();
   initCMSFlow();
   initChallengeList();
   initDecorAnimation();

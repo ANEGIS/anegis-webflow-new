@@ -24,7 +24,6 @@ declare const gsap: GSAP;
 
 export function initProductCards() {
   const triggers = document.querySelectorAll<HTMLElement>('[data-product-trigger]');
-
   // Close all overlays when clicking/tapping outside a card
   document.addEventListener('click', (e) => {
     triggers.forEach((trigger) => {
@@ -62,14 +61,10 @@ export function initProductCards() {
 
     let tween: GSAPTween | null = null;
 
-    // First click/tap when overlay is hidden: show overlay and block modal.
-    // Second click/tap (overlay already visible): let click propagate to open modal.
-    // On desktop this is a no-op because hover already sets is-active before the click.
-    trigger.addEventListener('click', (e) => {
-      if (!details.classList.contains('is-active')) {
-        e.stopImmediatePropagation();
-        details.classList.add('is-active');
-      }
+    // On click/tap, ensure overlay is active (no-op on desktop where hover already set it).
+    // Do NOT block propagation — modal must open on first tap on mobile.
+    trigger.addEventListener('click', () => {
+      details.classList.add('is-active');
     });
 
     trigger.addEventListener('mouseenter', () => {

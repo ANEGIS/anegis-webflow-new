@@ -268,7 +268,8 @@ export const initBlobAnimation = () => {
         const gw = Math.ceil(grainCanvas.width / grainScale);
         const gh = Math.ceil(grainCanvas.height / grainScale);
 
-        // Recreate buffer if size changed
+        // Recreate buffer if size changed (guard against zero dimensions)
+        if (gw <= 0 || gh <= 0) return;
         if (!grainImageData || grainImageData.width !== gw || grainImageData.height !== gh) {
           grainImageData = grainCtx.createImageData(gw, gh);
         }
