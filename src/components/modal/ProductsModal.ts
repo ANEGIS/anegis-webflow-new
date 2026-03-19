@@ -38,6 +38,15 @@ interface GSAPTimeline {
 
 declare const gsap: GSAP;
 
+const FOCUSABLE_SELECTORS =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+const getFocusableElements = (container: HTMLElement): HTMLElement[] =>
+  Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)).filter(
+    (el) =>
+      getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden'
+  );
+
 export function initProductsModal() {
   const modal = document.querySelector<HTMLElement>('[data-modal]');
   if (!modal) return;
@@ -45,6 +54,11 @@ export function initProductsModal() {
   const triggers = document.querySelectorAll<HTMLElement>('[data-product-trigger]');
   const closeButtons = document.querySelectorAll<HTMLElement>('[data-close-modal]');
   const modalTargets = modal.querySelectorAll<HTMLElement>('.product_item-modal-inner');
+
+  // Allow modal to receive focus as fallback
+  modal.setAttribute('tabindex', '-1');
+
+  let lastFocused: HTMLElement | null = null;
 
   // Set initial state
   // Set initial state
@@ -57,6 +71,31 @@ export function initProductsModal() {
 
   // Hide all contents initially
   gsap.set(modalTargets, { display: 'none', opacity: 0 });
+
+  const trapFocus = (e: KeyboardEvent) => {
+    if (e.key !== 'Tab') return;
+    const focusable = getFocusableElements(modal);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
+
+  const focusModal = () => {
+    const focusable = getFocusableElements(modal);
+    if (focusable.length) focusable[0].focus();
+    else modal.focus();
+  };
 
   // Function to open modal
   const openModal = (targetId: string) => {
@@ -96,10 +135,19 @@ export function initProductsModal() {
         }
       });
 
-      // Show new content
+      // Show new content and focus it
       gsap.set(targetContent, { display: 'block', opacity: 0, y: 10 });
-      gsap.to(targetContent, { opacity: 1, y: 0, duration: 0.3, delay: 0.2 });
+      gsap.to(targetContent, {
+        opacity: 1,
+        y: 0,
+        duration: 0.3,
+        delay: 0.2,
+        onComplete: focusModal,
+      });
     } else {
+      // Store focus origin for restoration on close
+      lastFocused = document.activeElement as HTMLElement;
+
       // Logic for first opening
       document.body.style.overflow = 'hidden';
       stopLenis();
@@ -124,12 +172,17 @@ export function initProductsModal() {
         opacity: 1,
         duration: 0.4,
         ease: 'power2.out',
+        onComplete: focusModal,
       });
+
+      modal.addEventListener('keydown', trapFocus);
     }
   };
 
   // Function to close modal
   const closeModal = () => {
+    modal.removeEventListener('keydown', trapFocus);
+
     // Animate content out?
     // Just fade out modal wrapper is usually enough and cleaner
     gsap.to(modal, {
@@ -143,6 +196,8 @@ export function initProductsModal() {
         gsap.set(modalTargets, { display: 'none' });
         document.body.style.overflow = '';
         startLenis();
+        lastFocused?.focus();
+        lastFocused = null;
       },
     });
   };
