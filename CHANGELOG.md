@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.0.7
+
+### Patch Changes
+
+- c2ae56e: focus trap
+
 ## 5.0.6
 
 ### Patch Changes
