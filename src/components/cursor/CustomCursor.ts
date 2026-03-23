@@ -123,7 +123,7 @@ export function initCustomCursor() {
   if (!targets.length) return;
 
   if (typeof gsap === 'undefined') {
-    console.warn('GSAP not found');
+    console.error('GSAP not found');
     return;
   }
 
@@ -135,7 +135,7 @@ export function initCustomCursor() {
     trailOffset: 28,
     positionLerp: 0.22,
     maxPoints: 20,
-    trailDecay: 0.70,
+    trailDecay: 0.7,
     rotationLerp: 0.12,
     idleSpeedThreshold: 0.4,
   };
@@ -156,10 +156,14 @@ export function initCustomCursor() {
   window.addEventListener('resize', syncViewBox);
 
   // ===== MOUSE TRACKING =====
-  window.addEventListener('mousemove', (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-  }, { passive: true });
+  window.addEventListener(
+    'mousemove',
+    (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    },
+    { passive: true }
+  );
 
   // ===== ACTIVATION =====
   function enter() {
@@ -200,7 +204,7 @@ export function initCustomCursor() {
 
   // ===== ANIMATION LOOP =====
   gsap.ticker.add(() => {
-    if (!active) return;
+    if (!active || trail.length < 2) return;
 
     cursor.x += (mouse.x - cursor.x) * CONFIG.positionLerp;
     cursor.y += (mouse.y - cursor.y) * CONFIG.positionLerp;
