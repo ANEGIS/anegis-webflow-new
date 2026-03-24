@@ -222,6 +222,13 @@ export const initLexicon = async () => {
 
   // --- Search Logic ---
   const searchInput = document.querySelector<HTMLInputElement>("[data-search='lex']");
+  const clearBox = document.querySelector<HTMLElement>('.clearbox');
+
+  function updateClearBoxVisibility() {
+    if (!clearBox) return;
+    clearBox.style.display = searchInput && searchInput.value.trim() !== '' ? 'flex' : 'none';
+  }
+
   if (searchInput) {
     searchInput.addEventListener('input', (event) => {
       const searchTerm = (event.target as HTMLInputElement).value.toLowerCase();
@@ -262,6 +269,21 @@ export const initLexicon = async () => {
           emptyState.style.display = 'none';
         }
       }
+
+      updateClearBoxVisibility();
     });
   }
+
+  // --- Clear-all button (.clearbox) ---
+  if (clearBox) {
+    clearBox.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      updateClearBoxVisibility();
+    });
+  }
+
+  updateClearBoxVisibility();
 };

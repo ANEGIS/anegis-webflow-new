@@ -183,6 +183,44 @@ export function initCaseStudyFilters() {
     }
   }
 
+  // ---- "Wszystkie" (select-all) radios — one per group ----
+  const allRadioTextEls = new Map<string, HTMLElement>();
+
+  FILTER_GROUPS.forEach((group) => {
+    const firstRadio = radios.find((r) => r.group === group);
+    if (!firstRadio?.wrapperEl) return;
+
+    const dropdown = groupDropdowns.get(group);
+    if (!dropdown) return;
+
+    const listEl = dropdown.wrapperEl.querySelector('[role="list"]');
+    if (!listEl) return;
+
+    // Clone the first listitem as a template
+    const allItem = firstRadio.wrapperEl.cloneNode(true) as HTMLElement;
+    allItem.setAttribute('data-clear-group', group);
+
+    // Update text and remove fs-list-field so it doesn't participate in filtering
+    const textEl = allItem.querySelector<HTMLElement>('.checkbox_text');
+    if (textEl) {
+      textEl.textContent = `Wszystkie ${dropdown.defaultText}`;
+      textEl.removeAttribute('fs-list-field');
+      textEl.classList.add('is-active');
+      allRadioTextEls.set(group, textEl);
+    }
+
+    // Set up the radio input
+    const input = allItem.querySelector<HTMLInputElement>('input[type="radio"]');
+    if (input) {
+      input.checked = false;
+      input.id = `${group}-all`;
+      input.value = '';
+    }
+
+    // Insert as the first item in the list
+    listEl.insertBefore(allItem, listEl.firstChild);
+  });
+
   // ---- Active filter state ----
   const activeFilters: Map<string, Set<string>> = new Map(
     FILTER_GROUPS.map((g) => [g, new Set<string>()])
@@ -381,6 +419,18 @@ export function initCaseStudyFilters() {
         return filtered;
       });
 
+      // ---- Helper: sync "Wszystkie" active state for a group ----
+      function updateAllRadioState(group: string) {
+        const allTextEl = allRadioTextEls.get(group);
+        if (!allTextEl) return;
+        const filterSet = activeFilters.get(group);
+        if (!filterSet || filterSet.size === 0) {
+          allTextEl.classList.add('is-active');
+        } else {
+          allTextEl.classList.remove('is-active');
+        }
+      }
+
       // ---- Radio handlers ----
       radios.forEach((r) => {
         r.input.addEventListener('click', () => {
@@ -404,10 +454,40 @@ export function initCaseStudyFilters() {
           }
 
           updateToggleLabel(r.group);
+          updateAllRadioState(r.group);
 
           listInstance.triggerHook('filter');
+          updateClearBoxVisibility();
         });
       });
+
+      // ---- "Wszystkie" radio click handlers ----
+      for (const group of FILTER_GROUPS) {
+        const allItem = document.querySelector<HTMLElement>(`[data-clear-group="${group}"]`);
+        if (!allItem) continue;
+
+        allItem.addEventListener('click', () => {
+          const filterSet = activeFilters.get(group);
+          if (!filterSet) return;
+
+          // Clear group filter
+          filterSet.clear();
+
+          // Uncheck all radios in this group and remove active state
+          radios
+            .filter((r) => r.group === group)
+            .forEach((r) => {
+              r.input.checked = false;
+              r.textEl?.classList.remove('is-active');
+            });
+
+          updateToggleLabel(group);
+          updateAllRadioState(group);
+
+          listInstance.triggerHook('filter');
+          updateClearBoxVisibility();
+        });
+      }
 
       // ---- Handle pre-checked radios ----
       radios.forEach((r) => {
@@ -420,12 +500,65 @@ export function initCaseStudyFilters() {
         }
       });
 
+      // ---- Clear-all button (.clearbox) ----
+      const clearBox = document.querySelector<HTMLElement>('.clearbox');
+      const searchInputs = document.querySelectorAll<HTMLInputElement>("[data-search='name']");
+
+      function hasSearchTerm(): boolean {
+        return Array.from(searchInputs).some((input) => input.value.trim() !== '');
+      }
+
+      function updateClearBoxVisibility() {
+        if (!clearBox) return;
+        clearBox.style.display = hasActiveFilters() || hasSearchTerm() ? 'flex' : 'none';
+      }
+
+      // Listen for search input changes to toggle clearbox visibility
+      searchInputs.forEach((input) => {
+        input.addEventListener('input', () => updateClearBoxVisibility());
+      });
+
+      if (clearBox) {
+        clearBox.addEventListener('click', () => {
+          // Clear all active filter sets
+          for (const filterSet of activeFilters.values()) {
+            filterSet.clear();
+          }
+
+          // Uncheck all radios and remove active state
+          radios.forEach((r) => {
+            r.input.checked = false;
+            r.textEl?.classList.remove('is-active');
+          });
+
+          // Reset all toggle labels and "Wszystkie" states
+          for (const group of FILTER_GROUPS) {
+            updateToggleLabel(group);
+            updateAllRadioState(group);
+          }
+
+          // Clear search inputs
+          document
+            .querySelectorAll<HTMLInputElement>("[data-search='name']")
+            .forEach((input) => {
+              input.value = '';
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+          // Re-trigger filtering
+          listInstance.triggerHook('filter');
+
+          updateClearBoxVisibility();
+        });
+      }
+
       // Always trigger once to initialise radio availability — even when no
       // pre-set filters exist. Finsweet's initial filter pipeline may have
       // already run before our hook was registered (we register it after
       // awaiting loadingPaginatedItems), so with single-page pagination and
       // no pre-checked radios we can't rely on an automatic trigger.
       listInstance.triggerHook('filter');
+      updateClearBoxVisibility();
     },
   ]);
 }
