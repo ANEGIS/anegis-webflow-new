@@ -116,6 +116,8 @@ function createCursorElements(): {
 }
 
 export function initCustomCursor() {
+  return; // Disabled custom cursor as requested
+
   const isDesktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   if (!isDesktop) return;
 

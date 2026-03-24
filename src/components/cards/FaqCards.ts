@@ -51,20 +51,26 @@ export function initFaqCards() {
   }
 
   function toggleCard(card: Element) {
-    const bottom = card.querySelector('.layout-card-bottom');
-    const currentHeight = bottom ? gsap.getProperty(bottom, 'height') : 0;
-    const isActive = parseFloat(String(currentHeight)) > 0;
+    const top = card.querySelector('.layout_card-top');
+    const isActive = top?.getAttribute('aria-expanded') === 'true';
+
+    if (isActive) {
+      const isAboutTab =
+        !!card.closest('.about_component') ||
+        !!document.querySelector(
+          `.about_component-image-outer[data-image="${card.getAttribute('data-card')}"]`
+        );
+      if (isAboutTab) return;
+      animateCard(card, false);
+      return;
+    }
 
     const allCards = document.querySelectorAll('.layout_card.is-faq');
     allCards.forEach((c) => {
       if (c !== card) animateCard(c, false);
     });
 
-    if (!isActive) {
-      animateCard(card, true);
-    } else {
-      animateCard(card, false);
-    }
+    animateCard(card, true);
   }
 
   function focusNextCard(currentCard: Element, cardsList: NodeListOf<Element>) {
