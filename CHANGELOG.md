@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.1.5
+
+### Patch Changes
+
+- 24ecb83: clearbox
+
 ## 5.1.4
 
 ### Patch Changes
