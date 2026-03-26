@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.1.6
+
+### Patch Changes
+
+- 678224d: tabs fix
+
 ## 5.1.5
 
 ### Patch Changes
