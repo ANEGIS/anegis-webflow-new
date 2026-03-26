@@ -29,6 +29,7 @@ export function initFaqCards() {
     if (bottom) bottom.setAttribute('aria-hidden', String(!isOpen));
 
     if (isOpen) {
+      if (top) gsap.set(top, { pointerEvents: 'none', cursor: 'default' });
       if (bottom) gsap.to(bottom, { height: 'auto', duration: 0.6, ease: 'power3.inOut' });
       if (iconWrapper) iconWrapper.classList.add('is-active');
       if (img) {
@@ -36,6 +37,7 @@ export function initFaqCards() {
         gsap.to(img, { autoAlpha: 1, duration: 0.6, ease: 'power3.inOut', overwrite: true });
       }
     } else {
+      if (top) gsap.set(top, { pointerEvents: 'auto', cursor: 'pointer' });
       if (bottom) gsap.to(bottom, { height: 0, duration: 0.6, ease: 'power3.inOut' });
       if (iconWrapper) iconWrapper.classList.remove('is-active');
       if (img) {
@@ -51,22 +53,19 @@ export function initFaqCards() {
   }
 
   function toggleCard(card: Element) {
-    const top = card.querySelector('.layout_card-top');
-    const isActive = top?.getAttribute('aria-expanded') === 'true';
+    const bottom = card.querySelector('.layout-card-bottom');
+    const currentHeight = bottom ? gsap.getProperty(bottom, 'height') : 0;
+    const isActive = parseFloat(String(currentHeight)) > 0;
 
-    if (isActive) {
-      const isAboutTab =
-        !!card.closest('.about_component') ||
-        !!document.querySelector(
-          `.about_component-image-outer[data-image="${card.getAttribute('data-card')}"]`
-        );
-      if (isAboutTab) return;
-      animateCard(card, false);
-      return;
-    }
+    // Already open — do nothing (one card must always stay open)
+    if (isActive) return;
 
-    const allCards = document.querySelectorAll('.layout_card.is-faq');
-    allCards.forEach((c) => {
+    // Scope toggling to the same grid wrapper
+    const grid = card.closest('.solutions_cards-grid.is-faq');
+    const siblingCards = grid
+      ? grid.querySelectorAll('.layout_card.is-faq')
+      : document.querySelectorAll('.layout_card.is-faq');
+    siblingCards.forEach((c) => {
       if (c !== card) animateCard(c, false);
     });
 
@@ -189,21 +188,17 @@ export function initFaqCards() {
         });
       }
     });
-    // Auto-open first valid item globally if none are open
-    const hasActiveCard = document.querySelector(
-      '.layout_card.is-faq .layout_action-icon.is-active'
-    );
-    if (!hasActiveCard) {
-      const globalCards = Array.from(document.querySelectorAll('.layout_card.is-faq'));
-      const firstValidCard = globalCards.find((card) => {
-        const id = card.getAttribute('data-card');
-        return document.querySelector(`.about_component-image-outer[data-image="${id}"]`);
-      });
-
-      if (firstValidCard) {
-        animateCard(firstValidCard, true);
+    // Per grid: always open the first card if none are open in that grid
+    const grids = document.querySelectorAll('.solutions_cards-grid.is-faq');
+    grids.forEach((grid) => {
+      const hasActiveCard = grid.querySelector('.layout_action-icon.is-active');
+      if (!hasActiveCard) {
+        const firstCard = grid.querySelector('.layout_card.is-faq');
+        if (firstCard) {
+          animateCard(firstCard, true);
+        }
       }
-    }
+    });
   }
 
   // Initial Initialization
