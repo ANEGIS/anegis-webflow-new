@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.1.7
+
+### Patch Changes
+
+- 56395a7: timeline animation
+
 ## 5.1.6
 
 ### Patch Changes
