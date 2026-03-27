@@ -40,11 +40,12 @@ export const initDecorAnimation = () => {
     }
 
     if (topDecor) {
+      const isInside = triggerElement.classList.contains('is-inside');
       tl.fromTo(
         topDecor,
         { y: 0, xPercent: -50 },
         {
-          y: -60,
+          y: isInside ? -40 : -60,
           xPercent: -50,
           duration: 1.2,
           ease: 'power2.out',

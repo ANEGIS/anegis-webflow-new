@@ -157,7 +157,7 @@ function initSlider(element: HTMLElement): void {
   // For "1 slide + 10% peek", use slidesPerView: 1.1
 
   const desktopSlidesAttr = element.getAttribute('data-desktop-slides');
-  const desktopSlides = desktopSlidesAttr ? parseFloat(desktopSlidesAttr) : 3.5;
+  const desktopSlides = desktopSlidesAttr ? parseFloat(desktopSlidesAttr) : 4;
 
   const options: SwiperOptions = {
     slidesPerView: slidesPerView,
