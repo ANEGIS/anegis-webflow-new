@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.1.9
+
+### Patch Changes
+
+- 96b4d63: animations
+
 ## 5.1.8
 
 ### Patch Changes
