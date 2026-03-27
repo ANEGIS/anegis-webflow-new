@@ -7,6 +7,7 @@ import { initDecorAnimation } from './animations/DecorAnimation';
 import { initMarquee, initMarqueeScroll } from './animations/Marquee';
 import { initScrollLine } from './animations/ScrollLine';
 import { initSectionHeaderAnimation } from './animations/SectionHeaderAnimation';
+import { initTimelineAnimation } from './animations/TimelineAnimation';
 import { initSmoothScroll } from './animations/SmoothScroll';
 import { initAccessibleButtons } from './components/buttons/AccessibleButtons';
 import { initCustomCursor } from './components/cursor/CustomCursor';
@@ -60,6 +61,7 @@ window.Webflow.push(() => {
   initChallengeList();
   initDecorAnimation();
   initSectionHeaderAnimation();
+  initTimelineAnimation();
   initCaseStudyFilters();
   initSearchFilter();
   initLexicon();
