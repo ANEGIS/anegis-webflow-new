@@ -156,6 +156,10 @@ function initSlider(element: HTMLElement): void {
   // Result: You see ~2 slides (1 full + 90% of next)
   // For "1 slide + 10% peek", use slidesPerView: 1.1
 
+  // Read data-tablet-slides attribute, fallback to mobile value if not present
+  const tabletSlidesAttr = element.getAttribute('data-tablet-slides');
+  const tabletSlides = tabletSlidesAttr ? parseFloat(tabletSlidesAttr) : slidesPerView;
+
   const desktopSlidesAttr = element.getAttribute('data-desktop-slides');
   const desktopSlides = desktopSlidesAttr ? parseFloat(desktopSlidesAttr) : 4;
 
@@ -166,6 +170,10 @@ function initSlider(element: HTMLElement): void {
     freeMode: false,
     watchOverflow: true,
     breakpoints: {
+      768: {
+        slidesPerView: tabletSlides,
+        spaceBetween: spaceBetween,
+      },
       992: {
         slidesPerView: desktopSlides,
         spaceBetween: 0,

@@ -12,7 +12,7 @@ declare const gsap: GSAP;
  * DOM rearrangement after each transition for seamless cycling.
  *
  * DOWN → animate y: 0 → -step, move first child to end, reset y=0
- * UP   → move last child to start, set y=-step, animate y: -step → 0
+ * UP   → set y=-step FIRST (no flash), move last child to start, animate y: -step → 0
  */
 export function initCMSFlow() {
   document.querySelectorAll('.content-col').forEach((flow) => {
@@ -30,22 +30,21 @@ export function initCMSFlow() {
     const rect1 = items[1].getBoundingClientRect();
     const step = rect1.top - rect0.top;
     const gap = step - rect0.height;
-    const viewportHeight = 3 * rect0.height + 2 * gap;
+
+    // At least 400px tall
+    const viewportHeight = Math.max(3 * rect0.height + 2 * gap, 401);
 
     // --- Create clipped viewport (arrows stay outside the clip) ---
     const viewport = document.createElement('div');
-    viewport.style.height = `${viewportHeight}px`;
-    viewport.style.overflow = 'hidden';
+    viewport.style.cssText = `height: ${viewportHeight}px; overflow: hidden; position: relative;`;
     track.parentNode?.insertBefore(viewport, track);
     viewport.appendChild(track);
 
-    // CRITICAL: force the track to be tall enough for ALL items.
-    // Webflow CSS may constrain height — override with cssText.
+    // Force the track to be tall enough for ALL items
     const totalTrackHeight = items.length * step - gap;
-    track.style.cssText += `; overflow: visible !important; height: ${totalTrackHeight}px !important; min-height: 0 !important; max-height: none !important;`;
+    track.style.cssText += `; overflow: visible !important; height: ${totalTrackHeight}px !important; min-height: 0 !important; max-height: none !important; will-change: transform;`;
 
     // --- Initial arrangement: active item in the MIDDLE (index 1 of 3) ---
-    // We need the item BEFORE the active one at position 0
     let activeIdx = items.findIndex((item) => item.classList.contains('is-active'));
     if (activeIdx === -1) activeIdx = 0;
 
@@ -55,32 +54,33 @@ export function initCMSFlow() {
       if (el) track.appendChild(el);
     }
 
-    gsap.set(track, { y: 0 });
-    syncActive();
-
-    let isAnimating = false;
-
     function syncActive() {
-      // Middle item (index 1) is always active
       Array.from(track.querySelectorAll('.content-col-item')).forEach((el, i) => {
         el.classList.toggle('is-active', i === 1);
       });
     }
+
+    gsap.set(track, { y: 0 });
+    syncActive();
+
+    let isAnimating = false;
 
     // DOWN arrow → next item
     function goNext() {
       if (isAnimating) return;
       isAnimating = true;
 
+      // Mirror of goPrev: move first to end, compensate y, then animate to 0.
+      // This avoids blank space — no 4th item needed during animation.
+      const first = track.firstElementChild as HTMLElement;
+      track.appendChild(first);
+      gsap.set(track, { y: step });
+
       gsap.to(track, {
-        y: -step,
-        duration: 0.6,
+        y: 0,
+        duration: 0.5,
         ease: 'power3.inOut',
         onComplete() {
-          // Move first item to end, reset position
-          const first = track.querySelector('.content-col-item');
-          if (first) track.appendChild(first);
-          gsap.set(track, { y: 0 });
           syncActive();
           isAnimating = false;
         },
@@ -92,16 +92,18 @@ export function initCMSFlow() {
       if (isAnimating) return;
       isAnimating = true;
 
-      // Move last item to start BEFORE animating
       const all = Array.from(track.querySelectorAll('.content-col-item'));
       const last = all[all.length - 1];
-      track.insertBefore(last, track.querySelector('.content-col-item'));
 
-      // Offset so it looks unchanged, then animate into view
+      // DOM change first, then compensate — mirrors goNext pattern exactly.
+      // If GSAP batches its update to the next paint, DOM-first ensures the
+      // arriving item is always in the DOM before any transform is visible.
+      track.insertBefore(last, track.firstChild);
       gsap.set(track, { y: -step });
+
       gsap.to(track, {
         y: 0,
-        duration: 0.6,
+        duration: 0.5,
         ease: 'power3.inOut',
         onComplete() {
           syncActive();
