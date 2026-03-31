@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 6.0.2
+
+### Patch Changes
+
+- c9dede1: nav arrows
+
 ## 6.0.1
 
 ### Patch Changes
