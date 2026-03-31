@@ -203,7 +203,8 @@ export function initCaseStudyFilters() {
     // Update text and remove fs-list-field so it doesn't participate in filtering
     const textEl = allItem.querySelector<HTMLElement>('.checkbox_text');
     if (textEl) {
-      textEl.textContent = `Wszystkie ${dropdown.defaultText}`;
+      const isEnglish = window.location.pathname.startsWith('/en');
+      textEl.textContent = isEnglish ? 'All' : 'Wszystkie';
       textEl.removeAttribute('fs-list-field');
       textEl.classList.add('is-active');
       allRadioTextEls.set(group, textEl);
