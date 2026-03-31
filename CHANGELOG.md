@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.1.10
+
+### Patch Changes
+
+- 811ded6: arrow anim
+
 ## 5.1.9
 
 ### Patch Changes
