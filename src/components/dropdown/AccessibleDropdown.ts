@@ -58,14 +58,25 @@ export function initAccessibleDropdown() {
       }
     });
 
+    const isMobile = () => !!dropdown.closest('.w-nav-overlay');
+
+    if (dropdownIcon) {
+      (dropdownIcon as HTMLElement).style.transition = 'transform 0.3s ease';
+    }
+
     // Observer for external state changes (e.g. Webflow's native JS)
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'class') {
           const isOpen = dropdownToggle.classList.contains('w--open');
           if (dropdownIcon) {
-            if (isOpen) dropdownIcon.classList.add('is-open');
-            else dropdownIcon.classList.remove('is-open');
+            if (isOpen) {
+              dropdownIcon.classList.add('is-open');
+              if (isMobile()) (dropdownIcon as HTMLElement).style.transform = 'rotate(-90deg)';
+            } else {
+              dropdownIcon.classList.remove('is-open');
+              if (isMobile()) (dropdownIcon as HTMLElement).style.transform = 'rotate(90deg)';
+            }
           }
         }
       });
