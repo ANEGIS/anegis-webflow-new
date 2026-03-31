@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 6.1.0
+
+### Minor Changes
+
+- ec6163e: flow cms animation
+
 ## 6.0.3
 
 ### Patch Changes
