@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 5.1.11
+
+### Patch Changes
+
+- b9df585: footer arrow anim
+
 ## 5.1.10
 
 ### Patch Changes
