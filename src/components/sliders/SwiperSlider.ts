@@ -30,8 +30,9 @@ declare class Swiper {
   slideTo(index: number): void;
 }
 
-// Tablet breakpoint
+// Tablet breakpoints
 const TABLET_BREAKPOINT = 991;
+const TABLET_MIN_BREAKPOINT = 768;
 
 /**
  * Initialize ALL swipers on the page
@@ -63,6 +64,9 @@ export function initSwiperSlider() {
     // Read data-mobile-slides for mobile slidesPerView (if set)
     const mobileSlides = element.getAttribute('data-mobile-slides');
     const mobileSlidesPerView = mobileSlides ? parseFloat(mobileSlides) : 1;
+
+    // Check if any slide contains [fs-list-element="item-link"] — special tablet handling
+    const hasItemLink = element.querySelector('[fs-list-element="item-link"]') !== null;
 
     // Find navigation arrows (check inside element and in parent)
     const parent = element.parentElement;
@@ -96,6 +100,10 @@ export function initSwiperSlider() {
         prevEl: prevEl,
       },
       breakpoints: {
+        // Tablet (768–991): 1.5 slides for item-link sliders, else default
+        ...(hasItemLink
+          ? { [TABLET_MIN_BREAKPOINT]: { slidesPerView: 1.5, centeredSlides: true } }
+          : {}),
         // Above tablet: use 1 slide per view
         [TABLET_BREAKPOINT + 1]: {
           slidesPerView: 1,
