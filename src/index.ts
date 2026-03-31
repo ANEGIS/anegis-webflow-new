@@ -3,6 +3,7 @@ import { greetUser } from '$utils/greet';
 
 import { initBlobAnimation } from './animations/BlobAnimation';
 import { initCMSFlow } from './animations/CMSFlow';
+import { initCircleArrowAnimation } from './animations/CircleArrowAnimation';
 import { initDecorAnimation } from './animations/DecorAnimation';
 import { initMarquee, initMarqueeScroll } from './animations/Marquee';
 import { initScrollLine } from './animations/ScrollLine';
@@ -60,6 +61,7 @@ window.Webflow.push(() => {
   initCMSFlow();
   initChallengeList();
   initDecorAnimation();
+  initCircleArrowAnimation();
   initSectionHeaderAnimation();
   initTimelineAnimation();
   initCaseStudyFilters();
