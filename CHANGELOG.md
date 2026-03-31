@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 6.0.0
+
+### Major Changes
+
+- f6aabd9: anim
+
 ## 5.1.11
 
 ### Patch Changes
