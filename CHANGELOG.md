@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 6.0.1
+
+### Patch Changes
+
+- c903985: swiper slider tablet fix
+
 ## 6.0.0
 
 ### Major Changes
