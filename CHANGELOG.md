@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 6.0.3
+
+### Patch Changes
+
+- 1912c2d: dropdown label
+
 ## 6.0.2
 
 ### Patch Changes
