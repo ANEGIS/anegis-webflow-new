@@ -3,13 +3,24 @@ import { gsap } from 'gsap';
 /**
  * Circle Arrow Animation
  *
- * On page load:
- * 1. Sets opacity:1 on .header_main-decor — CSS transition (set in Webflow) handles the fade.
- * 2. GSAP animates the SVG: floats upward + rotates in for momentum.
- * 3. The arrowhead path travels a little further along the circle's tangent.
+ * Handles two variants:
+ *
+ * Default (.circle-arrow_wrapper)
+ *   — CCW arrow, arrowhead at upper-left of circle
+ *   — Rotation: -12 → 0 (settles clockwise)
+ *   — Arrowhead tangent: x:+18, y:-8
+ *   — Fades in via .header_main-decor CSS transition (set in Webflow)
+ *
+ * Footer (.circle-arrow_wrapper.is-footer)
+ *   — Fades in via .footer_main-decor CSS transition (set in Webflow)
+ *
+ * Footer (.circle-arrow_wrapper.is-footer)
+ *   — CW arrow, arrowhead at ~12 o'clock
+ *   — Rotation: +12 → 0 (settles counter-clockwise)
+ *   — Arrowhead tangent: x:-20, y:-3
  *
  * Expected HTML structure:
- * <div class="header_main-decor">        ← opacity:0 + transition set in Webflow
+ * <div class="header_main-decor">        ← opacity:0 + transition set in Webflow (default only)
  *   <div class="circle-arrow_wrapper">
  *     <svg>...</svg>
  *   </div>
@@ -22,30 +33,41 @@ export const initCircleArrowAnimation = () => {
     const svgEl = container.querySelector('svg') as SVGElement | null;
     if (!svgEl) return;
 
-    // The filled gradient arrowhead is the last <path> in the SVG
     const arrowHead = svgEl.querySelector('path:last-of-type') as SVGPathElement | null;
+    const isFooter = container.classList.contains('is-footer');
 
-    // Outer wrapper has opacity:0 + CSS transition set in Webflow — just flip to 1
-    const outerWrapper = container.closest<HTMLElement>('.header_main-decor');
-    if (outerWrapper) {
-      outerWrapper.style.opacity = '1';
+    if (isFooter) {
+      // opacity:0 + CSS transition set on .footer_main-decor in Webflow
+      const outerWrapper = container.closest<HTMLElement>('.footer_main-decor');
+      if (outerWrapper) {
+        outerWrapper.style.opacity = '1';
+      }
+    } else {
+      // opacity:0 + CSS transition set on .header_main-decor in Webflow
+      const outerWrapper = container.closest<HTMLElement>('.header_main-decor');
+      if (outerWrapper) {
+        outerWrapper.style.opacity = '1';
+      }
     }
 
-    // SVG: float upward + rotate in for momentum (starts slightly rotated CCW, settles to 0)
+    // CW arrow starts slightly positive rotation, CCW starts slightly negative
+    const startRotation = isFooter ? 12 : -12;
+
     gsap.fromTo(
       svgEl,
-      { y: 10, rotation: -12, transformOrigin: '50% 50%' },
+      { y: 10, rotation: startRotation, transformOrigin: '50% 50%' },
       { y: -15, rotation: 0, duration: 1.4, ease: 'power2.out', delay: 0.2 }
     );
 
-    // Arrowhead: travels further along the circle's tangent
-    // Circle center (309, 313), arrowhead ~(220, 109)
-    // CCW tangent ≈ (+0.916, -0.400) × 20px → x:+18, y:-8
     if (arrowHead) {
+      // CCW arrowhead (upper-left, ~10 o'clock): tangent ≈ (+0.916, -0.400) × 20px
+      // CW arrowhead (~12 o'clock):              tangent ≈ (-0.988, -0.153) × 20px
+      const tangent = isFooter ? { x: -20, y: -3 } : { x: 18, y: -8 };
+
       gsap.fromTo(
         arrowHead,
         { x: 0, y: 0 },
-        { x: 18, y: -8, duration: 1.6, ease: 'power2.out', delay: 0.2 }
+        { ...tangent, duration: 1.6, ease: 'power2.out', delay: 0.2 }
       );
     }
   });
