@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 6.1.2
+
+### Patch Changes
+
+- 18d160e: global animation fix
+
 ## 6.1.1
 
 ### Patch Changes
