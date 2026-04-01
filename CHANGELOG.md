@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 6.1.1
+
+### Patch Changes
+
+- e38a76d: batch fix
+
 ## 6.1.0
 
 ### Minor Changes
