@@ -294,7 +294,9 @@ export function initCaseStudyFilters() {
       removeLoadingState();
 
       // ---- Empty state element ----
-      const emptyEl = document.querySelector<HTMLElement>('[data-empty]');
+      const emptyEl =
+        listInstance.wrapperElement?.querySelector<HTMLElement>('[data-empty]') ??
+        document.querySelector<HTMLElement>('[data-empty]');
       if (emptyEl) emptyEl.style.display = 'none';
 
       function updateEmptyState(resultCount: number, filtersActive: boolean) {
@@ -404,7 +406,7 @@ export function initCaseStudyFilters() {
       // ---- Register our custom filter hook ----
       listInstance.addHook('filter', (items: FsListItem[]) => {
         if (!hasActiveFilters()) {
-          updateEmptyState(items.length, false);
+          updateEmptyState(items.length, hasSearchTerm());
           updateRadioAvailability();
           return items;
         }

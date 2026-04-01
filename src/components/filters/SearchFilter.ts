@@ -92,7 +92,9 @@ export function initSearchFilter() {
           });
         });
 
-        const emptyEl = document.querySelector<HTMLElement>('[data-empty]');
+        const emptyEl =
+          listInstance.wrapperElement?.querySelector<HTMLElement>('[data-empty]') ??
+          document.querySelector<HTMLElement>('[data-empty]');
 
         input.addEventListener('input', () => {
           listInstance.triggerHook('filter');

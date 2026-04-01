@@ -64,7 +64,7 @@ window.Webflow.push(() => {
   initCircleArrowAnimation();
   initSectionHeaderAnimation();
   initTimelineAnimation();
-  initCaseStudyFilters();
   initSearchFilter();
+  initCaseStudyFilters();
   initLexicon();
 });
