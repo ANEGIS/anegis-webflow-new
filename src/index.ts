@@ -22,6 +22,7 @@ import { initSmartNav } from './components/layout/SmartNav';
 import { initLexicon } from './components/lexicon/Lexicon';
 import { initMegaMenuAccordion } from './components/menu/MegaMenuAccordion';
 import { initMobileNavScroll } from './components/menu/MobileNavScroll';
+import { initEbookDownload } from './components/forms/EbookDownload';
 import { initFormModal } from './components/modal/FormModal';
 import { initProductsModal } from './components/modal/ProductsModal';
 import { initDockSliders } from './components/sliders/DockSlider';
@@ -45,6 +46,7 @@ window.Webflow.push(() => {
   initMobileNavScroll();
   initFaqCards();
   initProductCards();
+  initEbookDownload();
   initFormModal();
   initProductsModal();
 
