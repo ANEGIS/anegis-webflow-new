@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 6.2.0
+
+### Minor Changes
+
+- 6a519bd: download feature added
+
 ## 6.1.2
 
 ### Patch Changes
