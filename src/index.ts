@@ -23,6 +23,7 @@ import { initLexicon } from './components/lexicon/Lexicon';
 import { initMegaMenuAccordion } from './components/menu/MegaMenuAccordion';
 import { initMobileNavScroll } from './components/menu/MobileNavScroll';
 import { initEbookDownload } from './components/forms/EbookDownload';
+import { initNipValidation } from './components/forms/NipValidation';
 import { initFormModal } from './components/modal/FormModal';
 import { initProductsModal } from './components/modal/ProductsModal';
 import { initDockSliders } from './components/sliders/DockSlider';
@@ -47,6 +48,7 @@ window.Webflow.push(() => {
   initFaqCards();
   initProductCards();
   initEbookDownload();
+  initNipValidation();
   initFormModal();
   initProductsModal();
 
@@ -70,3 +72,4 @@ window.Webflow.push(() => {
   initCaseStudyFilters();
   initLexicon();
 });
+
