@@ -11,6 +11,9 @@ importers:
       '@finsweet/ts-utils':
         specifier: ^0.40.0
         version: 0.40.0
+      free-email-domains:
+        specifier: ^1.9.23
+        version: 1.9.23
       gsap:
         specifier: ^3.14.2
         version: 3.14.2
@@ -694,6 +697,10 @@ packages:
 
   flatted@3.3.3:
     resolution: {integrity: sha512-GX+ysw4PBCz0PzosHDepZGANEuFCMLrnRTiEy9McGjmkCQYwRq4A/X786G/fjM/+OjsWSU1ZrY5qyARZmO/uwg==}
+
+  free-email-domains@1.9.23:
+    resolution: {integrity: sha512-exT4dOZF9lEVFtNNWKVyu1lgaN5KEPhnsnq+WW1iWqiwOfb3hr9/XyrVzMtd+eBdmcgaA5E7ab2IwR+Eg77Vwg==}
+    engines: {node: '>= 18'}
 
   fs-extra@7.0.1:
     resolution: {integrity: sha512-YJDaCJZEnBmcbw13fvdAM9AwNOJwOzrE4pqMqBq5nFiEqXUqHwlK4B+3pUw6JNvfSPtX05xFHtYy/1ni01eGCw==}
@@ -1769,6 +1776,8 @@ snapshots:
       keyv: 4.5.4
 
   flatted@3.3.3: {}
+
+  free-email-domains@1.9.23: {}
 
   fs-extra@7.0.1:
     dependencies:

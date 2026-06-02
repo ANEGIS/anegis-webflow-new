@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "@finsweet/ts-utils": "^0.40.0",
+    "free-email-domains": "^1.9.23",
     "gsap": "^3.14.2"
   },
   "engines": {
