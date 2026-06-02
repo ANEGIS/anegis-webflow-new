@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 6.3.0
+
+### Minor Changes
+
+- 6faffdb: nip validation added
+
 ## 6.2.0
 
 ### Minor Changes
