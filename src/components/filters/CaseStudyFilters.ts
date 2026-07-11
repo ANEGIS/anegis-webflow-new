@@ -359,7 +359,7 @@ export function initCaseStudyFilters() {
                   r.parentEl.appendChild(r.wrapperEl);
                 }
               }
-              visibleCount++;
+              visibleCount += 1;
               continue;
             }
 
@@ -376,7 +376,7 @@ export function initCaseStudyFilters() {
                   r.parentEl.appendChild(r.wrapperEl);
                 }
               }
-              visibleCount++;
+              visibleCount += 1;
             } else {
               if (r.wrapperEl.parentElement) {
                 r.wrapperEl.remove();
@@ -541,12 +541,10 @@ export function initCaseStudyFilters() {
           }
 
           // Clear search inputs
-          document
-            .querySelectorAll<HTMLInputElement>("[data-search='name']")
-            .forEach((input) => {
-              input.value = '';
-              input.dispatchEvent(new Event('input', { bubbles: true }));
-            });
+          document.querySelectorAll<HTMLInputElement>("[data-search='name']").forEach((input) => {
+            input.value = '';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+          });
 
           // Re-trigger filtering
           listInstance.triggerHook('filter');

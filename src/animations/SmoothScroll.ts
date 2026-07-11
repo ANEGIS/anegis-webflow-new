@@ -70,33 +70,35 @@ export function initSmoothScroll(): void {
   // Make native anchor links work with Lenis smooth scroll.
   // Webflow nav links use full URLs (https://domain/#section), NOT just #section,
   // so we must match on href*="#" and compare the pathname too.
-  document.querySelectorAll<HTMLAnchorElement>('a[href*="#"]:not(.w-tab-link)').forEach((anchor) => {
-    anchor.addEventListener('click', (e: MouseEvent) => {
-      const href = anchor.getAttribute('href');
-      if (!href) return;
+  document
+    .querySelectorAll<HTMLAnchorElement>('a[href*="#"]:not(.w-tab-link)')
+    .forEach((anchor) => {
+      anchor.addEventListener('click', (e: MouseEvent) => {
+        const href = anchor.getAttribute('href');
+        if (!href) return;
 
-      // Extract just the hash part
-      let hash: string;
-      try {
-        const url = new URL(href, window.location.href);
-        // Only intercept if we're staying on the same page
-        if (url.pathname !== window.location.pathname) return;
-        hash = url.hash;
-      } catch {
-        // Malformed URL - try to use it as-is
-        hash = href.startsWith('#') ? href : '';
-      }
+        // Extract just the hash part
+        let hash: string;
+        try {
+          const url = new URL(href, window.location.href);
+          // Only intercept if we're staying on the same page
+          if (url.pathname !== window.location.pathname) return;
+          hash = url.hash;
+        } catch {
+          // Malformed URL - try to use it as-is
+          hash = href.startsWith('#') ? href : '';
+        }
 
-      if (!hash || hash === '#') return;
+        if (!hash || hash === '#') return;
 
-      const target = document.querySelector(hash);
-      if (!target || !lenisInstance) return;
+        const target = document.querySelector(hash);
+        if (!target || !lenisInstance) return;
 
-      e.preventDefault();
-      e.stopPropagation();
-      lenisInstance.scrollTo(target as HTMLElement, { offset: 0, duration: 1.05 });
+        e.preventDefault();
+        e.stopPropagation();
+        lenisInstance.scrollTo(target as HTMLElement, { offset: 0, duration: 1.05 });
+      });
     });
-  });
 
   function raf(time: number): void {
     lenisInstance?.raf(time);

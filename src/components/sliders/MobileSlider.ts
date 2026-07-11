@@ -83,6 +83,11 @@ function updateProgress(instance: SwiperInstance, progressThumb: HTMLElement) {
 function initSlider(element: HTMLElement): void {
   if (activeSliders.has(element)) return; // Already initialized
 
+  // Bail out on malformed markup (e.g. empty CMS collection removes the
+  // .swiper-wrapper element) — Swiper's mount() crashes on a null wrapper
+  const wrapper = element.querySelector<HTMLElement>('.swiper-wrapper');
+  if (!wrapper || wrapper.children.length === 0) return;
+
   // Read data-mobile-slides attribute, fallback to 1 if not present
   const mobileSlides = element.getAttribute('data-mobile-slides');
   const slidesPerView = mobileSlides ? parseFloat(mobileSlides) : 1;
@@ -116,20 +121,17 @@ function initSlider(element: HTMLElement): void {
 
   // Store original styles before modifying
   const slides = element.querySelectorAll<HTMLElement>('.swiper-slide');
-  const wrapper = element.querySelector<HTMLElement>('.swiper-wrapper');
   const styleMap = new Map<HTMLElement, CSSStyleDeclaration>();
 
-  if (wrapper) {
-    const originalStyle = wrapper.style.cssText;
-    const tempDiv = document.createElement('div');
-    tempDiv.style.cssText = originalStyle;
-    styleMap.set(wrapper, tempDiv.style);
+  const originalWrapperStyle = wrapper.style.cssText;
+  const wrapperTempDiv = document.createElement('div');
+  wrapperTempDiv.style.cssText = originalWrapperStyle;
+  styleMap.set(wrapper, wrapperTempDiv.style);
 
-    wrapper.style.display = 'flex';
-    wrapper.style.flexDirection = 'row';
-    wrapper.style.gap = '0';
-    wrapper.style.gridGap = '0';
-  }
+  wrapper.style.display = 'flex';
+  wrapper.style.flexDirection = 'row';
+  wrapper.style.gap = '0';
+  wrapper.style.gridGap = '0';
 
   slides.forEach((slide) => {
     // Clone the current inline style
@@ -260,10 +262,16 @@ function handleSliders(): void {
       }
     }
 
-    if (shouldInit) {
-      initSlider(slider);
-    } else {
-      destroySlider(slider);
+    try {
+      if (shouldInit) {
+        initSlider(slider);
+      } else {
+        destroySlider(slider);
+      }
+    } catch (error) {
+      // One broken slider must not abort the remaining sliders
+      // or the rest of the site's init sequence
+      console.error('[MobileSlider] Failed to initialize slider:', slider, error);
     }
   });
 }

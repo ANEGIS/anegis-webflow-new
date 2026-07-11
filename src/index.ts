@@ -2,29 +2,29 @@ import { initChallengeList } from '$utils/challengeList';
 import { greetUser } from '$utils/greet';
 
 import { initBlobAnimation } from './animations/BlobAnimation';
-import { initCMSFlow } from './animations/CMSFlow';
 import { initCircleArrowAnimation } from './animations/CircleArrowAnimation';
+import { initCMSFlow } from './animations/CMSFlow';
 import { initDecorAnimation } from './animations/DecorAnimation';
 import { initMarquee, initMarqueeScroll } from './animations/Marquee';
 import { initScrollLine } from './animations/ScrollLine';
 import { initSectionHeaderAnimation } from './animations/SectionHeaderAnimation';
-import { initTimelineAnimation } from './animations/TimelineAnimation';
 import { initSmoothScroll } from './animations/SmoothScroll';
+import { initTimelineAnimation } from './animations/TimelineAnimation';
 import { initAccessibleButtons } from './components/buttons/AccessibleButtons';
-import { initCustomCursor } from './components/cursor/CustomCursor';
 import { initFaqCards } from './components/cards/FaqCards';
 import { initProductCards } from './components/cards/ProductCards';
+import { initCustomCursor } from './components/cursor/CustomCursor';
 import { initAccessibleDropdown } from './components/dropdown/AccessibleDropdown';
 import { initCaseStudyFilters } from './components/filters/CaseStudyFilters';
 import { initSearchFilter } from './components/filters/SearchFilter';
+import { initEbookDownload } from './components/forms/EbookDownload';
+import { initEmailValidation } from './components/forms/EmailValidation';
+import { initNipValidation } from './components/forms/NipValidation';
 import { initNavAccessibility } from './components/layout/NavAccessibility';
 import { initSmartNav } from './components/layout/SmartNav';
 import { initLexicon } from './components/lexicon/Lexicon';
 import { initMegaMenuAccordion } from './components/menu/MegaMenuAccordion';
 import { initMobileNavScroll } from './components/menu/MobileNavScroll';
-import { initEbookDownload } from './components/forms/EbookDownload';
-import { initEmailValidation } from './components/forms/EmailValidation';
-import { initNipValidation } from './components/forms/NipValidation';
 import { initFormModal } from './components/modal/FormModal';
 import { initProductsModal } from './components/modal/ProductsModal';
 import { initDockSliders } from './components/sliders/DockSlider';
@@ -74,5 +74,3 @@ window.Webflow.push(() => {
   initCaseStudyFilters();
   initLexicon();
 });
-
-

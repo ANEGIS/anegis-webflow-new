@@ -1,7 +1,9 @@
+type JQueryLike = (element: Element) => { trigger: (eventName: string) => void };
+
 declare global {
   interface Window {
-    jQuery?: any;
-    $: any;
+    jQuery?: JQueryLike;
+    $?: JQueryLike;
   }
 }
 

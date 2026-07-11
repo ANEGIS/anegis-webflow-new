@@ -72,8 +72,7 @@ export function initSearchFilter() {
         const listInstance =
           listInstances.find(
             (inst) =>
-              (listEl && inst.wrapperElement?.contains(listEl)) ||
-              inst.listElement === listEl
+              (listEl && inst.wrapperElement?.contains(listEl)) || inst.listElement === listEl
           ) || listInstances[0];
 
         if (!listInstance) continue;

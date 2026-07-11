@@ -126,7 +126,6 @@ class MobileTabs {
     });
   }
 
-
   private preventWebflowClick = (e: Event): void => {
     // Stop other listeners (Webflow's tab script) from seeing this click
     e.stopImmediatePropagation();

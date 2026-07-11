@@ -157,12 +157,31 @@ export function initSwiperSlider() {
       };
 
       let isDragging = false;
-      hitArea.addEventListener('mousedown', (e) => { isDragging = true; scrubTo(e.clientX); });
-      document.addEventListener('mousemove', (e) => { if (isDragging) scrubTo(e.clientX); });
-      document.addEventListener('mouseup', () => { isDragging = false; });
+      hitArea.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        scrubTo(e.clientX);
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (isDragging) scrubTo(e.clientX);
+      });
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
 
-      hitArea.addEventListener('touchstart', (e) => { scrubTo(e.touches[0].clientX); }, { passive: true });
-      hitArea.addEventListener('touchmove', (e) => { scrubTo(e.touches[0].clientX); }, { passive: true });
+      hitArea.addEventListener(
+        'touchstart',
+        (e) => {
+          scrubTo(e.touches[0].clientX);
+        },
+        { passive: true }
+      );
+      hitArea.addEventListener(
+        'touchmove',
+        (e) => {
+          scrubTo(e.touches[0].clientX);
+        },
+        { passive: true }
+      );
     }
   });
 }

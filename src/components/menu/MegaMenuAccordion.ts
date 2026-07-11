@@ -175,10 +175,12 @@ class MegaMenuAccordion {
       buttonClone.setAttribute('aria-expanded', 'false');
 
       // Set default icon rotation (90deg for collapsed state)
-      buttonClone.querySelectorAll<HTMLElement>('.icon-embed-xxsmall, .dropdown_icon.is-nav').forEach(icon => {
-        icon.style.transition = 'transform 0.3s ease';
-        icon.style.transform = 'rotate(90deg)';
-      });
+      buttonClone
+        .querySelectorAll<HTMLElement>('.icon-embed-xxsmall, .dropdown_icon.is-nav')
+        .forEach((icon) => {
+          icon.style.transition = 'transform 0.3s ease';
+          icon.style.transform = 'rotate(90deg)';
+        });
 
       triggerWrapper.appendChild(buttonClone);
       accordionItem.appendChild(triggerWrapper);
@@ -241,9 +243,11 @@ class MegaMenuAccordion {
     button.setAttribute('aria-expanded', 'true');
 
     // Rotate icon to open state (-90deg)
-    button.querySelectorAll<HTMLElement>('.icon-embed-xxsmall, .dropdown_icon.is-nav').forEach(icon => {
-      icon.style.transform = 'rotate(-90deg)';
-    });
+    button
+      .querySelectorAll<HTMLElement>('.icon-embed-xxsmall, .dropdown_icon.is-nav')
+      .forEach((icon) => {
+        icon.style.transform = 'rotate(-90deg)';
+      });
 
     // Animate open
     content.style.display = 'block';
@@ -263,9 +267,11 @@ class MegaMenuAccordion {
     button.setAttribute('aria-expanded', 'false');
 
     // Rotate icon back to closed state (90deg)
-    button.querySelectorAll<HTMLElement>('.icon-embed-xxsmall, .dropdown_icon.is-nav').forEach(icon => {
-      icon.style.transform = 'rotate(90deg)';
-    });
+    button
+      .querySelectorAll<HTMLElement>('.icon-embed-xxsmall, .dropdown_icon.is-nav')
+      .forEach((icon) => {
+        icon.style.transform = 'rotate(90deg)';
+      });
 
     // Animate close
     content.style.maxHeight = `${content.scrollHeight}px`;
