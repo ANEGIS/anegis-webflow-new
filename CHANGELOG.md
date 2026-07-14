@@ -1,5 +1,11 @@
 # anegis-webflow-new
 
+## 6.3.3
+
+### Patch Changes
+
+- ac8f67d: inject fix
+
 ## 6.3.2
 
 ### Patch Changes
