@@ -54,6 +54,7 @@ window.Webflow.push(() => {
   initFormModal();
   initProductsModal();
 
+  initChallengeList();
   initSwiperSlider();
   initMobileSliders();
   initDockSliders();

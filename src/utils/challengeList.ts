@@ -1,13 +1,24 @@
 export function initChallengeList() {
-  const challengeList = document.querySelector('[data-challenge-list]');
-  const headingCard = document.querySelector('[data-heading-card]');
-  const ctaCard = document.querySelector('[data-cta-card]');
+  const challengeLists = document.querySelectorAll<HTMLElement>('[data-challenge-list]');
 
-  if (challengeList && headingCard) {
-    challengeList.insertAdjacentElement('afterbegin', headingCard);
-  }
+  challengeLists.forEach((challengeList) => {
+    // Scope lookups to the section wrapping this list, so multiple
+    // instances on one page don't steal each other's cards
+    let scope: HTMLElement | null = challengeList.parentElement;
+    while (scope && !scope.querySelector('[data-heading-card], [data-cta-card]')) {
+      scope = scope.parentElement;
+    }
+    if (!scope) return;
 
-  if (challengeList && ctaCard) {
-    challengeList.insertAdjacentElement('beforeend', ctaCard);
-  }
+    const headingCard = scope.querySelector<HTMLElement>('[data-heading-card]');
+    const ctaCard = scope.querySelector<HTMLElement>('[data-cta-card]');
+
+    if (headingCard && !headingCard.contains(challengeList)) {
+      challengeList.insertAdjacentElement('afterbegin', headingCard);
+    }
+
+    if (ctaCard && !ctaCard.contains(challengeList)) {
+      challengeList.insertAdjacentElement('beforeend', ctaCard);
+    }
+  });
 }
